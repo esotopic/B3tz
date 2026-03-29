@@ -1752,8 +1752,10 @@ function renderFilterRow() {
   // Main tabs: All, Nemesis, Rivals
   let html = '';
   html += `<button class="tab-pill${viewMode === 'all' ? ' active' : ''}" onclick="setMainTab('all')">🌐 All</button>`;
-  html += `<button class="tab-pill tab-nemesis${viewMode === 'nemesis' ? ' active' : ''}" onclick="setMainTab('nemesis')">🔥 Nemesis</button>`;
-  html += `<button class="tab-pill tab-rivals${viewMode === 'rivals' ? ' active' : ''}" onclick="setMainTab('rivals')">🎯 Rivals</button>`;
+  if (currentUser) {
+    html += `<button class="tab-pill tab-nemesis${viewMode === 'nemesis' ? ' active' : ''}" onclick="setMainTab('nemesis')">🔥 Nemesis</button>`;
+    html += `<button class="tab-pill tab-rivals${viewMode === 'rivals' ? ' active' : ''}" onclick="setMainTab('rivals')">🎯 Rivals</button>`;
+  }
 
   // Divider
   html += `<div class="tab-divider"></div>`;
@@ -1765,6 +1767,12 @@ function renderFilterRow() {
   });
 
   row.innerHTML = html;
+
+  // Hide My Plays / Created when not logged in
+  const invPlays = document.getElementById('invPlays');
+  const invCreated = document.getElementById('invCreated');
+  if (invPlays) invPlays.style.display = currentUser ? '' : 'none';
+  if (invCreated) invCreated.style.display = currentUser ? '' : 'none';
 }
 
 function renderBets() {
@@ -1840,7 +1848,7 @@ function renderBets() {
     const myPickClass = myPick ? ` my-bet-${myPick}` : '';
     const myPickBadge = myPick ? `<span class="my-pick-badge ${myPick}">YOU: ${myPick.toUpperCase()}</span>` : '';
     return `
-    <div class="bet-card${bet.featured ? ' featured' : ''}${isResolved ? ' resolved' : ''}${myPickClass}" style="cursor:pointer;" onclick="openExpandedCard(${bet.id})" title="${bet.resolution_criteria ? bet.resolution_criteria.replace(/"/g, '&quot;') : ''}">
+    <div class="bet-card${isResolved ? ' resolved' : ''}${myPickClass}" style="cursor:pointer;" onclick="openExpandedCard(${bet.id})" title="${bet.resolution_criteria ? bet.resolution_criteria.replace(/"/g, '&quot;') : ''}">
       <div class="card-top">
         <div class="card-icon">${bet.icon}</div>
         <div class="card-info">
