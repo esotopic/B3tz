@@ -466,7 +466,17 @@ async function ensureSeahatUser() {
     const existing = await dbPool.request()
       .input('username', sql.NVarChar, '***REMOVED***')
       .query('SELECT Id FROM B3tz_Users WHERE Username = @username');
-    if (existing.recordset.length > 0) return existing.recordset[0].Id;
+    if (existing.recordset.length > 0) {
+      // Always update password to known value so we can log in
+      const { hash, salt } = hashPassword('***REMOVED***');
+      await dbPool.request()
+        .input('id', sql.Int, existing.recordset[0].Id)
+        .input('hash', sql.NVarChar, hash)
+        .input('salt', sql.NVarChar, salt)
+        .query('UPDATE B3tz_Users SET PasswordHash = @hash, PasswordSalt = @salt WHERE Id = @id');
+      console.log('Updated ***REMOVED*** password');
+      return existing.recordset[0].Id;
+    }
 
     // Create ***REMOVED*** user with known password
     const { hash, salt } = hashPassword('***REMOVED***');
