@@ -1223,6 +1223,32 @@ async function handleRequest(req, res) {
   }
 
   // ══════════════════════════════════
+  // ── API: Debug user bets (temporary) ──
+  // ══════════════════════════════════
+  const debugMatch = pathname.match(/^\/api\/debug\/user-bets\/(.+)$/);
+  if (debugMatch && req.method === 'GET') {
+    const username = decodeURIComponent(debugMatch[1]);
+    if (dbPool) {
+      try {
+        const userResult = await dbPool.request()
+          .input('username', sql.NVarChar, username)
+          .query('SELECT Id, Username, DisplayName FROM B3tz_Users WHERE Username = @username');
+        if (userResult.recordset.length === 0) return sendJSON(res, 404, { error: 'User not found' });
+        const uid = userResult.recordset[0].Id;
+        const betsResult = await dbPool.request()
+          .input('userId', sql.Int, uid)
+          .query(`SELECT ub.Id AS UbId, ub.BetId, ub.Side, ub.PlacedDate, b.Title, b.Category
+                  FROM B3tz_UserBets ub JOIN B3tz_Bets b ON b.Id = ub.BetId
+                  WHERE ub.UserId = @userId ORDER BY ub.PlacedDate DESC`);
+        return sendJSON(res, 200, { user: userResult.recordset[0], bets: betsResult.recordset, total: betsResult.recordset.length });
+      } catch (e) {
+        return sendJSON(res, 500, { error: e.message });
+      }
+    }
+    return sendJSON(res, 200, { error: 'No DB' });
+  }
+
+  // ══════════════════════════════════
   // ── API: Get Bet Voters ──
   // ══════════════════════════════════
 
@@ -1636,6 +1662,114 @@ async function handleRequest(req, res) {
       }
     } else {
       return sendJSON(res, 200, { rival: {}, stats: { sharedBets: 0, opposing: 0, myWins: 0, theirWins: 0, ties: 0 }, bets: [] });
+    }
+  }
+
+  // ══════════════════════════════════
+  // ── API: Leaderboard ──
+  // ══════════════════════════════════
+
+  if (pathname === '/api/leaderboard' && req.method === 'GET') {
+    try {
+      if (dbPool) {
+        const result = await dbPool.request().query(`
+          SELECT
+            u.Id, u.Username, u.DisplayName,
+            COUNT(DISTINCT ub.BetId) AS totalBets,
+            SUM(CASE WHEN b.Status = 'resolved' AND (
+              (ub.Side = 'yes' AND b.ResolvedSide = 'yes') OR
+              (ub.Side = 'no' AND b.ResolvedSide = 'no')
+            ) THEN 1 ELSE 0 END) AS wins,
+            SUM(CASE WHEN b.Status = 'resolved' AND b.ResolvedSide IS NOT NULL AND (
+              (ub.Side = 'yes' AND b.ResolvedSide = 'no') OR
+              (ub.Side = 'no' AND b.ResolvedSide = 'yes')
+            ) THEN 1 ELSE 0 END) AS losses,
+            SUM(CASE WHEN b.Status = 'resolved' AND b.ResolvedSide IS NOT NULL THEN 1 ELSE 0 END) AS resolved,
+            (SELECT COUNT(*) FROM B3tz_Bets WHERE CreatedByUserId = u.Id) AS betsCreated,
+            (SELECT COUNT(DISTINCT RivalUserId) FROM B3tz_Rivals WHERE UserId = u.Id) AS rivalCount,
+            (SELECT COUNT(DISTINCT r2.RivalUserId) FROM B3tz_Rivals r1
+              JOIN B3tz_Rivals r2 ON r1.RivalUserId = r2.UserId AND r2.RivalUserId = r1.UserId
+              WHERE r1.UserId = u.Id) AS nemesisCount,
+            (SELECT COUNT(*) FROM B3tz_Challenges WHERE SenderUserId = u.Id) AS challengesSent,
+            COUNT(DISTINCT b.Category) AS categoriesPlayed
+          FROM B3tz_Users u
+          LEFT JOIN B3tz_UserBets ub ON ub.UserId = u.Id
+          LEFT JOIN B3tz_Bets b ON b.Id = ub.BetId
+          GROUP BY u.Id, u.Username, u.DisplayName
+          HAVING COUNT(DISTINCT ub.BetId) >= 1
+          ORDER BY COUNT(DISTINCT ub.BetId) DESC
+        `);
+
+        // Compute composite B3tz Score and streaks client-side is fine
+        // but let's also get per-user category breakdown for top category
+        const catResult = await dbPool.request().query(`
+          SELECT ub.UserId, b.Category, COUNT(*) AS cnt
+          FROM B3tz_UserBets ub
+          JOIN B3tz_Bets b ON b.Id = ub.BetId
+          GROUP BY ub.UserId, b.Category
+        `);
+        const userCats = {};
+        for (const row of catResult.recordset) {
+          if (!userCats[row.UserId]) userCats[row.UserId] = {};
+          userCats[row.UserId][row.Category] = row.cnt;
+        }
+
+        const players = result.recordset.map(r => {
+          const winRate = r.resolved > 0 ? (r.wins / r.resolved) : 0;
+          // B3tz Score: weighted composite
+          // 40% accuracy (if enough resolved), 30% volume, 20% social, 10% creation
+          const accuracyScore = r.resolved >= 3 ? winRate * 100 : 50; // default 50 if not enough data
+          const volumeScore = Math.min(r.totalBets * 5, 100); // cap at 20 bets = 100
+          const socialScore = Math.min((r.rivalCount * 10) + (r.nemesisCount * 20), 100);
+          const creationScore = Math.min(r.betsCreated * 10, 100);
+          const b3tzScore = Math.round(
+            (accuracyScore * 0.4) + (volumeScore * 0.3) + (socialScore * 0.2) + (creationScore * 0.1)
+          );
+
+          // Find signature stat (what they're best at)
+          let signature = { type: 'volume', label: r.totalBets + ' bets', icon: '🎲' };
+          if (r.resolved >= 3 && winRate >= 0.65) signature = { type: 'accuracy', label: Math.round(winRate * 100) + '% win rate', icon: '🎯' };
+          else if (r.nemesisCount >= 2) signature = { type: 'nemesis', label: r.nemesisCount + ' nemeses', icon: '🔥' };
+          else if (r.rivalCount >= 3) signature = { type: 'social', label: r.rivalCount + ' rivals', icon: '⚔️' };
+          else if (r.betsCreated >= 3) signature = { type: 'creator', label: r.betsCreated + ' created', icon: '✨' };
+          else if (r.challengesSent >= 2) signature = { type: 'challenger', label: r.challengesSent + ' challenges', icon: '📨' };
+
+          // Top category
+          const cats = userCats[r.Id] || {};
+          const topCat = Object.entries(cats).sort((a, b) => b[1] - a[1])[0];
+
+          return {
+            id: r.Id,
+            username: r.Username,
+            displayName: r.DisplayName || r.Username,
+            totalBets: r.totalBets,
+            wins: r.wins,
+            losses: r.losses,
+            resolved: r.resolved,
+            winRate: r.resolved > 0 ? Math.round(winRate * 100) : null,
+            betsCreated: r.betsCreated,
+            rivalCount: r.rivalCount,
+            nemesisCount: r.nemesisCount,
+            challengesSent: r.challengesSent,
+            categoriesPlayed: r.categoriesPlayed,
+            topCategory: topCat ? topCat[0] : null,
+            b3tzScore,
+            signature
+          };
+        });
+
+        // Sort by B3tz Score descending
+        players.sort((a, b) => b.b3tzScore - a.b3tzScore);
+        // Assign ranks
+        players.forEach((p, i) => p.rank = i + 1);
+
+        return sendJSON(res, 200, { players });
+      } else {
+        return sendJSON(res, 200, { players: [] });
+      }
+    } catch (e) {
+      console.error('Leaderboard error:', e.message);
+      return sendJSON(res, 500, { error: 'Failed to load leaderboard' });
     }
   }
 
