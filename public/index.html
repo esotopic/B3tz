@@ -3775,7 +3775,7 @@ function renderLeaderboard() {
         <div class="lb-podium-name">${p.displayName}${isMe ? ' (you)' : ''}</div>
         <div class="lb-podium-score">${getTabMetric(p)}</div>
         <div class="lb-podium-label">${getTabScoreLabel()}</div>
-        <div class="lb-podium-sig">${p.signature || ''}</div>
+        <div class="lb-podium-sig">${p.signature ? (p.signature.icon + ' ' + p.signature.label) : ''}</div>
       </div>
     `;
   });
@@ -3798,7 +3798,7 @@ function renderLeaderboard() {
               <div class="lb-player-avatar">${playerInitial(p.displayName)}</div>
               <div>
                 <div class="lb-player-name">${p.displayName}${isMe ? ' (you)' : ''}</div>
-                <div class="lb-player-sig">${p.signature || p.topCategory || ''}</div>
+                <div class="lb-player-sig">${p.signature ? (p.signature.icon + ' ' + p.signature.label) : (p.topCategory || '')}</div>
               </div>
             </div>
           </td>
