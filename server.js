@@ -411,31 +411,23 @@ Be vigilant about EVASION TRICKS:
 - Bets where the title is clean but the implied meaning is vulgar or harmful
 - "Will [celebrity] die" type bets — these are inappropriate even if technically verifiable
 
-EVENT TIMING RULES (CRITICAL):
-Same-day bets are EXTREMELY COMMON. You have the exact current time in all US timezones above — USE IT to make precise decisions.
+EVENT TIMING RULES (CRITICAL — READ CAREFULLY):
+Same-day bets are the #1 most common bet type. You MUST allow them unless you have DEFINITIVE proof the event is over.
 
-Your job: figure out the ACTUAL scheduled start time of the event, compare it to the current time, and decide.
+GOLDEN RULE: If you do not know the EXACT, SPECIFIC start time of THIS PARTICULAR event, you MUST ALLOW the bet. Do NOT guess. Do NOT assume. Sports leagues have games at MANY different times throughout the day — for example, NCAA March Madness has games from 12 PM ET through 10 PM ET. You cannot assume "it's afternoon so the game started." There could be an evening game.
 
 ALLOW the bet if:
 - The event is tomorrow or later
-- The event is TODAY and has NOT YET STARTED (current time is BEFORE the event's scheduled start time)
+- The event is today and you do NOT know for certain that THIS SPECIFIC event has already ENDED with a publicly known outcome
+- You only know approximate/general game times but not the specific time for THIS game → ALLOW
 - The event has no specific start time (like "Bitcoin hits $200K") and the outcome isn't already known
-- You cannot determine the exact start time — when in doubt, ALLOW
 
 REJECT the bet ONLY if:
-- The current time is AFTER the event's scheduled start time (the event is in progress or finished)
+- You know the SPECIFIC start time of THIS event AND the current time is after that start time
+- You are certain the event ALREADY ENDED and the final outcome is publicly known
 - The event happened on a previous day and the outcome is known
 
-HOW TO DETERMINE START TIMES:
-- Use your knowledge of sports schedules. For example, NCAA March Madness games have specific tipoff times (e.g., 2:20 PM ET, 5:05 PM ET, 6:09 PM ET, 8:49 PM ET). NFL games are typically 1 PM ET, 4:25 PM ET, or 8:20 PM ET on Sundays.
-- Compare the event's start time to the CURRENT US time shown above.
-- If you know the specific start time, compare precisely. A game starting at 2:05 PM PT should be allowed at 2:04 PM PT but rejected at 2:06 PM PT.
-- If you only know an approximate time range, use the LATEST reasonable start time (most generous to the user).
-
-EXAMPLES using current times above:
-- "Duke beats UConn today" and it's 11:50 AM PT → NCAA tipoff is likely 2 PM+ PT → ALLOW (game hasn't started)
-- "Lakers beat Celtics tonight" and it's 8 PM PT → NBA tipoff was likely 7:30 PM PT → REJECT (game likely in progress)
-- "Chiefs beat Eagles today" and it's 10 AM ET → NFL kickoff is 1 PM+ ET → ALLOW (hours before kickoff)
+CRITICAL: Do NOT reject based on general assumptions like "NCAA games are usually in the afternoon." Many games are in the evening. If you're not sure, ALLOW.
 
 Rules for VALID bets:
 1. The bet MUST be about an event with an objectively verifiable yes/no outcome.
@@ -496,16 +488,15 @@ Current US times: Eastern: ${etTime} | Central: ${ctTime} | Mountain: ${mtTime} 
 
 Given the bet title and event date below, determine if someone should still be allowed to place a bet.
 
-Your job: figure out the ACTUAL scheduled start time of the event, compare it to the current time, and decide.
+GOLDEN RULE: If you do NOT know the EXACT, SPECIFIC start time of THIS PARTICULAR event, respond {"allowed":true}. Do NOT guess. Sports have games at many different times throughout the day.
 
 Rules:
-- ALLOW if the current time is BEFORE the event's scheduled start time (event hasn't started yet)
-- ALLOW if you cannot determine the exact start time — when in doubt, ALLOW
-- REJECT if the current time is AFTER the event's start time (event is in progress or finished)
+- ALLOW if the event is today and you do NOT know for certain it has already ENDED with a known outcome
+- ALLOW if you only know general/approximate game times but not this specific game's time
+- REJECT ONLY if you are certain the event ALREADY ENDED and the final outcome is publicly known
 - REJECT if the event happened on a previous day and the outcome is known
-- Use your knowledge of sports schedules to determine start times (e.g., NCAA tipoff times, NFL kickoff times, etc.)
-- Compare precisely: a game starting at 2:05 PM PT should be allowed at 2:04 PM PT but rejected at 2:06 PM PT
 - For open-ended bets with no specific start time (like "Bitcoin hits $200K"), always allow.
+- Do NOT reject based on general assumptions like "games usually start in the afternoon"
 
 Respond with ONLY a JSON object: {"allowed":true} or {"allowed":false,"reason":"..."}
 No markdown.`;
