@@ -330,14 +330,80 @@ function fetchURL(url) {
 }
 
 // ── Validate & structure a bet using Claude ──
+// ── Server-side profanity pre-filter ──
+// Catches obvious profanity/slurs BEFORE calling the AI, saving API costs
+const BLOCKED_PATTERNS = [
+  // Common profanity
+  /\b(fuck|f[*]?uck|fuk|fuq|fck|stfu|gtfo|wtf)\b/i,
+  /\b(shit|sh[*1!]t|bullshit|horseshit)\b/i,
+  /\b(ass|a[*]?ss|assh[o0]le|dumb[a@]ss)\b/i,
+  /\b(bitch|b[*1!]tch|biatch)\b/i,
+  /\b(damn|d[a@]mn)\b/i,
+  /\b(dick|d[*1!]ck|c[o0]ck|penis|peen)\b/i,
+  /\b(pussy|p[*]?ussy|cunt|c[*]?unt|vag)\b/i,
+  /\b(whore|wh[o0]re|slut|sl[*]?ut|hoe|thot)\b/i,
+  /\b(bastard|b[a@]stard)\b/i,
+  // Slurs / hate speech (covering common variants)
+  /\b(nigg|n[1!]gg|niga|negro|sp[i1!]c|ch[i1!]nk|k[i1!]ke|f[a@]g|f[a@]gg[o0]t|d[y1]ke|tr[a@]nn[y1!]|retard)\b/i,
+  // Sexual / adult content
+  /\b(porn|p[o0]rn|xxx|hentai|nude|naked|blowjob|handjob|orgasm|orgies|orgy|dildo|vibrator|masturbat|ejaculat|anal\s?sex|oral\s?sex)\b/i,
+  // Violence / harm
+  /\b(rape|r[a@]pe|molest|pedoph|murder|kill\s+(myself|himself|herself|someone)|suicide\s+bet|school\s+shoot|mass\s+shoot|bomb\s+threat)\b/i,
+  // Drug abuse (encouraging illegal use)
+  /\b(meth|heroin|crack\s?cocaine|fentanyl|overdose)\b/i,
+  // Leet speak / unicode evasion patterns
+  /\b(f[\W_]*u[\W_]*c[\W_]*k)\b/i,
+  /\b(s[\W_]*h[\W_]*[i1!][\W_]*t)\b/i,
+];
+
+function preFilterBetInput(input) {
+  const cleaned = input.replace(/[_\-.*]/g, ''); // strip common obfuscation chars
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(input) || pattern.test(cleaned)) {
+      return { blocked: true, reason: 'Your bet contains language that isn\'t allowed on B3tz. This is a family-friendly platform — keep it clean and try again!' };
+    }
+  }
+  // Also block very short or obviously empty inputs
+  if (input.replace(/[^a-zA-Z]/g, '').length < 5) {
+    return { blocked: true, reason: 'Please provide a more descriptive bet.' };
+  }
+  return { blocked: false };
+}
+
 async function validateBetWithAI(userInput) {
+  // Pre-filter before calling AI
+  const preCheck = preFilterBetInput(userInput);
+  if (preCheck.blocked) {
+    return { status: 'invalid', reason: preCheck.reason };
+  }
+
   const today = new Date().toISOString().split('T')[0];
 
   const systemPrompt = `You are the B3tz bet validator. Your job is to take a user's natural language bet and turn it into a structured, verifiable bet.
 
 Today's date: ${today}
 
-Rules:
+CONTENT POLICY (HIGHEST PRIORITY — enforce before anything else):
+This is a FAMILY-FRIENDLY platform. You MUST reject any bet that contains or implies:
+- Profanity, slurs, or vulgar language (including masked with symbols like f*ck, sh!t, etc.)
+- Sexual or adult content of any kind
+- Violence, self-harm, or threats against real people
+- Hate speech, discrimination, or targeting of individuals/groups
+- Drug abuse or illegal activity encouragement
+- Bullying, harassment, or humiliation of real named private individuals
+- Bets designed to be cruel, degrading, or harmful to anyone
+- Anything a responsible parent wouldn't want their teenager to see
+
+If the bet violates content policy, respond:
+{"status":"invalid","reason":"This bet isn't appropriate for B3tz. We're a family-friendly platform — please keep bets fun, clean, and respectful!"}
+
+Be vigilant about EVASION TRICKS:
+- Misspellings, leet speak (sh1t, phuck, etc.), spaced-out words (f u c k), unicode substitution
+- Bets that seem innocent on the surface but are clearly coded references to inappropriate content
+- Bets where the title is clean but the implied meaning is vulgar or harmful
+- "Will [celebrity] die" type bets — these are inappropriate even if technically verifiable
+
+Rules for VALID bets:
 1. The bet MUST be about a future event with an objectively verifiable yes/no outcome.
 2. Reject bets about subjective opinions ("pizza is the best food") — these can't be resolved.
 3. Reject bets about events that have ALREADY happened and whose outcome is known.
@@ -354,7 +420,7 @@ If VALID bet:
 If NEEDS CLARIFICATION:
 {"status":"clarify","question":"...","suggestions":["option1","option2"]}
 
-If INVALID (subjective, already happened, nonsensical):
+If INVALID (content policy violation, subjective, already happened, nonsensical):
 {"status":"invalid","reason":"..."}
 
 Categories to choose from: F1, Soccer, Basketball, Baseball, Crypto, Tech, Science, Gaming, Music, Politics, Entertainment, Sports, General`;
@@ -1433,6 +1499,18 @@ async function handleRequest(req, res) {
 
     if (!title) {
       return sendJSON(res, 400, { error: 'Bet title is required' });
+    }
+
+    // Final content safety check on the title and resolution criteria
+    const titleCheck = preFilterBetInput(title);
+    if (titleCheck.blocked) {
+      return sendJSON(res, 400, { error: titleCheck.reason });
+    }
+    if (resolution_criteria) {
+      const criteriaCheck = preFilterBetInput(resolution_criteria);
+      if (criteriaCheck.blocked) {
+        return sendJSON(res, 400, { error: criteriaCheck.reason });
+      }
     }
 
     const side = position === 'no' ? 'no' : 'yes';
