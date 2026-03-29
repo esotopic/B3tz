@@ -1457,6 +1457,146 @@ footer .footer-text {
   transform: translateY(-1px);
 }
 .btn-challenge:active { transform: scale(0.97); }
+
+/* Inline auth form (in action panel) */
+.inline-auth {
+  animation: fadeSlideIn 0.3s ease;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.inline-auth-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.inline-auth-header .picked-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.inline-auth-header .picked-side.yes { background: var(--yes-bg); color: var(--yes); border: 1px solid var(--yes-border); }
+.inline-auth-header .picked-side.no { background: var(--no-bg); color: var(--no); border: 1px solid var(--no-border); }
+.inline-auth-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.inline-auth-sub {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.inline-auth-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.inline-auth-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.inline-auth-tab.active {
+  color: var(--text);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+.inline-auth .modal-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.inline-auth-error {
+  color: var(--no);
+  font-size: 13px;
+  margin-bottom: 8px;
+  display: none;
+}
+.inline-auth-submit {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+.inline-auth-submit.yes { background: var(--yes); color: #000; }
+.inline-auth-submit.yes:hover { filter: brightness(1.1); }
+.inline-auth-submit.no { background: var(--no); color: #fff; }
+.inline-auth-submit.no:hover { filter: brightness(1.1); }
+.inline-auth-cancel {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+}
+.inline-auth-cancel:hover { color: var(--text-dim); }
+
+/* Bet confirmed state */
+.bet-confirmed {
+  animation: fadeSlideIn 0.3s ease;
+  text-align: center;
+}
+.bet-confirmed-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+.bet-confirmed-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.bet-confirmed-sub {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.bet-confirmed-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bet-confirmed-actions .btn-challenge {
+  animation: none;
+}
+.btn-explore {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-explore:hover { background: var(--card-hover); }
+
 /* Challenge icon on bet cards */
 .card-challenge-icon {
   position: absolute;
@@ -2880,46 +3020,110 @@ function handleBet(betId, side) {
     return;
   }
 
-  // Not logged in — show sign-in modal with bet preview
-  const preview = document.getElementById('betPreview');
-  preview.innerHTML = `
-    <div class="preview-title">${bet.icon} ${bet.title}</div>
-    <span class="preview-side ${side}">${side === 'yes' ? '✓ Yes' : '✕ No'} — ${side === 'yes' ? bet.yes_odds : bet.no_odds}%</span>
-  `;
-
-  const submitBtn = document.getElementById('modalBetSubmit');
-  submitBtn.className = 'modal-submit ' + side;
-  submitBtn.textContent = `Sign In & Bet ${side === 'yes' ? 'Yes' : 'No'}`;
-
-  document.getElementById('signInModal').classList.add('active');
+  // Not logged in — navigate to detail view if not already there, then show inline auth
+  if (detailBetId !== betId) {
+    // Navigate to detail view first, then show inline auth after render
+    window.location.hash = `bet/${betId}`;
+    setTimeout(() => showInlineAuth(side), 100);
+  } else {
+    showInlineAuth(side);
+  }
 }
 
-async function placeBetFromSignIn() {
-  // Sign in first, then place the bet
-  const loginVal = document.querySelector('#signInModal .modal-input[type="text"]').value.trim();
-  const passVal = document.querySelector('#signInModal .modal-input[type="password"]').value;
+function showInlineAuth(side) {
+  const actionPanel = document.querySelector('.detail-action');
+  if (!actionPanel) return;
+  const sideLabel = side === 'yes' ? 'Yes' : 'No';
 
-  if (!loginVal || !passVal) {
-    showToast('Please enter username and password');
+  actionPanel.innerHTML = `
+    <div class="inline-auth">
+      <div class="inline-auth-header">
+        <div class="picked-side ${side}">${side === 'yes' ? '✓' : '✕'} ${sideLabel}</div>
+        <div class="inline-auth-title">Lock in your bet</div>
+        <div class="inline-auth-sub">Pick a name to claim your side</div>
+      </div>
+      <div class="inline-auth-tabs">
+        <button class="inline-auth-tab active" id="iaTabNew" onclick="switchInlineAuth('register')">New Account</button>
+        <button class="inline-auth-tab" id="iaTabLogin" onclick="switchInlineAuth('login')">Sign In</button>
+      </div>
+      <div id="iaRegisterForm">
+        <input type="text" class="modal-input" id="iaRegUsername" placeholder="Choose a username" autocomplete="off" />
+        <input type="password" class="modal-input" id="iaRegPassword" placeholder="Choose a password" />
+        <div class="inline-auth-error" id="iaRegError"></div>
+        <button class="inline-auth-submit ${side}" id="iaRegBtn" onclick="inlineRegister('${side}')">Create Account & Bet ${sideLabel}</button>
+      </div>
+      <div id="iaLoginForm" style="display:none;">
+        <input type="text" class="modal-input" id="iaLoginInput" placeholder="Username or email" autocomplete="off" />
+        <input type="password" class="modal-input" id="iaLoginPassword" placeholder="Password" />
+        <div class="inline-auth-error" id="iaLoginError"></div>
+        <button class="inline-auth-submit ${side}" id="iaLoginBtn" onclick="inlineLogin('${side}')">Sign In & Bet ${sideLabel}</button>
+      </div>
+      <button class="inline-auth-cancel" onclick="cancelInlineAuth()">Cancel</button>
+    </div>
+  `;
+
+  // Auto-focus first input
+  setTimeout(() => {
+    const inp = document.getElementById('iaRegUsername');
+    if (inp) inp.focus();
+  }, 100);
+}
+
+function switchInlineAuth(tab) {
+  const regForm = document.getElementById('iaRegisterForm');
+  const loginForm = document.getElementById('iaLoginForm');
+  const tabNew = document.getElementById('iaTabNew');
+  const tabLogin = document.getElementById('iaTabLogin');
+  if (tab === 'login') {
+    regForm.style.display = 'none';
+    loginForm.style.display = 'block';
+    tabNew.classList.remove('active');
+    tabLogin.classList.add('active');
+    setTimeout(() => document.getElementById('iaLoginInput')?.focus(), 50);
+  } else {
+    regForm.style.display = 'block';
+    loginForm.style.display = 'none';
+    tabNew.classList.add('active');
+    tabLogin.classList.remove('active');
+    setTimeout(() => document.getElementById('iaRegUsername')?.focus(), 50);
+  }
+}
+
+function cancelInlineAuth() {
+  // Restore the normal action panel
+  if (detailBetId) {
+    showDetailView(detailBetId);
+  }
+  pendingBet = null;
+}
+
+async function inlineRegister(side) {
+  const username = document.getElementById('iaRegUsername').value.trim();
+  const password = document.getElementById('iaRegPassword').value;
+  const errorEl = document.getElementById('iaRegError');
+  const btn = document.getElementById('iaRegBtn');
+
+  if (!username || !password) {
+    errorEl.textContent = 'Username and password are required.';
+    errorEl.style.display = 'block';
     return;
   }
 
-  const btn = document.getElementById('modalBetSubmit');
-  const origText = btn.textContent;
-  btn.textContent = 'Signing in...';
+  btn.textContent = 'Creating account...';
   btn.disabled = true;
 
   try {
-    const res = await fetch('/api/login', {
+    const res = await fetch('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ login: loginVal, password: passVal })
+      body: JSON.stringify({ username, password })
     });
     const data = await res.json();
     if (!res.ok) {
-      showToast(data.error || 'Login failed');
-      btn.textContent = origText;
+      errorEl.textContent = data.error || 'Registration failed.';
+      errorEl.style.display = 'block';
+      btn.textContent = `Create Account & Bet ${side === 'yes' ? 'Yes' : 'No'}`;
       btn.disabled = false;
       return;
     }
@@ -2929,21 +3133,66 @@ async function placeBetFromSignIn() {
     updateViewFiltersVisibility();
     renderAvatarRow();
     renderFilterRow();
-    // Clear inputs
-    document.querySelector('#signInModal .modal-input[type="text"]').value = '';
-    document.querySelector('#signInModal .modal-input[type="password"]').value = '';
-    // Now place the pending bet
+    // Auto-place the pending bet
     placeBet();
   } catch (e) {
-    showToast('Network error');
+    errorEl.textContent = 'Network error. Try again.';
+    errorEl.style.display = 'block';
+    btn.textContent = `Create Account & Bet ${side === 'yes' ? 'Yes' : 'No'}`;
+    btn.disabled = false;
   }
-  btn.textContent = origText;
-  btn.disabled = false;
+}
+
+async function inlineLogin(side) {
+  const login = document.getElementById('iaLoginInput').value.trim();
+  const password = document.getElementById('iaLoginPassword').value;
+  const errorEl = document.getElementById('iaLoginError');
+  const btn = document.getElementById('iaLoginBtn');
+
+  if (!login || !password) {
+    errorEl.textContent = 'Please enter username and password.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Signing in...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ login, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errorEl.textContent = data.error || 'Login failed.';
+      errorEl.style.display = 'block';
+      btn.textContent = `Sign In & Bet ${side === 'yes' ? 'Yes' : 'No'}`;
+      btn.disabled = false;
+      return;
+    }
+    currentUser = data.user;
+    updateNavUI();
+    await Promise.all([loadMyBets(), loadRivals()]);
+    updateViewFiltersVisibility();
+    renderAvatarRow();
+    renderFilterRow();
+    // Auto-place the pending bet
+    placeBet();
+  } catch (e) {
+    errorEl.textContent = 'Network error. Try again.';
+    errorEl.style.display = 'block';
+    btn.textContent = `Sign In & Bet ${side === 'yes' ? 'Yes' : 'No'}`;
+    btn.disabled = false;
+  }
 }
 
 async function placeBet() {
   if (!pendingBet) return;
   const { bet, side } = pendingBet;
+  const wasInlineAuth = document.querySelector('.inline-auth') !== null;
   closeModals();
 
   try {
@@ -2958,13 +3207,14 @@ async function placeBet() {
     if (!res.ok) {
       showToast(data.error || 'Failed to place bet');
       pendingBet = null;
+      if (wasInlineAuth && detailBetId) showDetailView(detailBetId);
       return;
     }
 
-    // If rival was created via challenge, show special toast and refresh rivals
-    if (data.rivalCreated) {
-      showToast('⚔️ Challenge accepted! You\'re now rivals!');
-      activeChallengeCode = null; // Clear after claiming
+    // If rival was created via challenge, refresh rivals
+    const rivalCreated = data.rivalCreated;
+    if (rivalCreated) {
+      activeChallengeCode = null;
       await loadRivals();
       renderAvatarRow();
       renderFilterRow();
@@ -2983,15 +3233,67 @@ async function placeBet() {
     }
     renderBets();
     updateStats();
-    // Refresh detail view if open
+
+    // Show confirmation in the action panel
     if (detailBetId === bet.id) {
-      showDetailView(bet.id);
+      showBetConfirmation(bet, side, rivalCreated);
+    } else {
+      showToast(`🎯 Bet placed! You said ${side.toUpperCase()} on "${bet.title}"`);
     }
-    showToast(`🎯 Bet placed! You said ${side.toUpperCase()} on "${bet.title}"`);
   } catch (e) {
     showToast('Network error placing bet');
+    if (wasInlineAuth && detailBetId) showDetailView(detailBetId);
   }
   pendingBet = null;
+}
+
+function showBetConfirmation(bet, side, rivalCreated) {
+  // Update the main detail content (left side) with refreshed data
+  const freshBet = allBets.find(b => b.id === bet.id) || bet;
+  document.getElementById('dIcon').textContent = freshBet.icon;
+  document.getElementById('dTitle').textContent = freshBet.title;
+  const myPick = myBetsMap[freshBet.id] || null;
+  const myBadge = myPick ? `<span class="my-pick-badge ${myPick}">YOU: ${myPick.toUpperCase()}</span>` : '';
+  document.getElementById('dMeta').innerHTML = `
+    <span class="cat-tag">${freshBet.category}</span>
+    ${myBadge}
+    <span class="date-tag">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      ${freshBet.event_date ? formatDate(freshBet.event_date) : 'TBD'}
+    </span>
+    <span style="color:var(--text-muted);">by ${freshBet.created_by}</span>
+  `;
+
+  // Show confirmation in the action panel
+  const actionPanel = document.querySelector('.detail-action');
+  if (!actionPanel) return;
+
+  const sideLabel = side === 'yes' ? 'Yes' : 'No';
+  const sideColor = side === 'yes' ? 'var(--yes)' : 'var(--no)';
+  const rivalMsg = rivalCreated ? `<div style="margin-bottom:16px;padding:10px 14px;border-radius:10px;background:rgba(255,107,0,0.1);border:1px solid rgba(255,107,0,0.3);font-size:13px;color:#ff6b00;text-align:center;">⚔️ Challenge accepted — you're now rivals!</div>` : '';
+
+  actionPanel.innerHTML = `
+    <div class="bet-confirmed">
+      <div class="bet-confirmed-icon">🎯</div>
+      <div class="bet-confirmed-title">You're in!</div>
+      <div class="bet-confirmed-sub">
+        You bet <strong style="color:${sideColor}">${sideLabel}</strong> on "${freshBet.title}"
+      </div>
+      ${rivalMsg}
+      <div class="bet-confirmed-actions">
+        <button class="btn-challenge" onclick="challengeFriend()">
+          <span style="font-size:20px;">⚔️</span>
+          Challenge Someone Back
+        </button>
+        <button class="btn-explore" onclick="navigateHome()">
+          🌐 Explore More Bets
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Load voters panel too
+  loadDetailVoters(bet.id);
 }
 
 // ── AI Arbitration (single bet) ──
