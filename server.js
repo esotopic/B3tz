@@ -377,11 +377,14 @@ async function validateBetWithAI(userInput) {
     return { status: 'invalid', reason: preCheck.reason };
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const currentTime = now.toISOString();
 
   const systemPrompt = `You are the B3tz bet validator. Your job is to take a user's natural language bet and turn it into a structured, verifiable bet.
 
 Today's date: ${today}
+Current UTC time: ${currentTime}
 
 CONTENT POLICY (HIGHEST PRIORITY — enforce before anything else):
 This is a FAMILY-FRIENDLY platform. You MUST reject any bet that contains or implies:
@@ -403,10 +406,19 @@ Be vigilant about EVASION TRICKS:
 - Bets where the title is clean but the implied meaning is vulgar or harmful
 - "Will [celebrity] die" type bets — these are inappropriate even if technically verifiable
 
+EVENT TIMING RULES (CRITICAL):
+You must determine whether the event the user is betting on has ALREADY STARTED or not.
+- If the event is in the FUTURE or is scheduled for today but has NOT YET STARTED → ALLOW the bet. Same-day bets are perfectly fine as long as the event hasn't begun.
+- If the event is CURRENTLY IN PROGRESS (e.g., a game that kicked off already, a race that started) → REJECT with reason explaining the event appears to be underway.
+- If the event has ALREADY HAPPENED and the outcome is known → REJECT with reason explaining it already happened.
+- Use your knowledge of typical event schedules. For example, if someone bets on a basketball game "today" and it's a common tipoff time, reason about whether it's likely started yet based on the current UTC time.
+- When in doubt about whether an event has started, ALLOW the bet — give the user the benefit of the doubt. Only reject if you're fairly confident it's already underway or finished.
+- For events with no specific start time (like "Bitcoin hits $200K"), always allow them as long as the outcome isn't already known.
+
 Rules for VALID bets:
-1. The bet MUST be about a future event with an objectively verifiable yes/no outcome.
+1. The bet MUST be about an event with an objectively verifiable yes/no outcome.
 2. Reject bets about subjective opinions ("pizza is the best food") — these can't be resolved.
-3. Reject bets about events that have ALREADY happened and whose outcome is known.
+3. Reject bets about events that have ALREADY HAPPENED and whose outcome is known.
 4. If the event date is uncertain or could change (e.g. elections, product launches), note that in the resolution criteria. Use language like "when the event occurs" rather than locking to a specific date.
 5. Provide a clear title (concise, max 80 chars), a category, an icon emoji, an estimated event date, and detailed resolution criteria.
 6. The resolution criteria should describe EXACTLY how this bet will be resolved — what constitutes a YES and what constitutes a NO. Be specific enough that anyone could verify it.
@@ -420,7 +432,7 @@ If VALID bet:
 If NEEDS CLARIFICATION:
 {"status":"clarify","question":"...","suggestions":["option1","option2"]}
 
-If INVALID (content policy violation, subjective, already happened, nonsensical):
+If INVALID (content policy violation, subjective, already happened, in progress, nonsensical):
 {"status":"invalid","reason":"..."}
 
 Categories to choose from: F1, Soccer, Basketball, Baseball, Crypto, Tech, Science, Gaming, Music, Politics, Entertainment, Sports, General`;
@@ -434,6 +446,52 @@ Categories to choose from: F1, Soccer, Basketball, Baseball, Crypto, Tech, Scien
   // Parse JSON — handle potential markdown wrapping
   const jsonStr = text.replace(/^```json\s*/, '').replace(/\s*```$/, '');
   return JSON.parse(jsonStr);
+}
+
+// ── Check if an existing bet's event is still valid to bet on (hasn't started/ended) ──
+async function checkBetTimingWithAI(bet) {
+  const now = new Date();
+  const currentTime = now.toISOString();
+
+  // Quick check: if event_date is well in the future (>1 day away), skip AI call
+  if (bet.event_date) {
+    const eventDate = new Date(bet.event_date + 'T23:59:59Z');
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    if (eventDate > tomorrow) {
+      return { allowed: true }; // Event is more than a day away, no need for AI check
+    }
+  }
+
+  // For same-day or past-date events, ask AI to check timing
+  const systemPrompt = `You are a quick event timing checker for B3tz betting platform.
+
+Current UTC time: ${currentTime}
+
+Given the bet title and event date below, determine if someone should still be allowed to place a bet on this event.
+
+Rules:
+- If the event is in the FUTURE or scheduled for today but has NOT YET STARTED → respond {"allowed":true}
+- If the event is CURRENTLY IN PROGRESS → respond {"allowed":false,"reason":"This event appears to already be underway. Betting is closed once an event starts."}
+- If the event has ALREADY HAPPENED → respond {"allowed":false,"reason":"This event has already concluded. Betting is no longer available."}
+- Use your knowledge of typical event schedules (sports tipoff times, race start times, etc.) to reason about whether the event has likely started.
+- When in doubt, ALLOW the bet — give the user the benefit of the doubt.
+- For open-ended bets with no specific start time (like "Bitcoin hits $200K"), always allow.
+
+Respond with ONLY a JSON object, no markdown.`;
+
+  try {
+    const response = await callClaudeAPI(
+      [{ role: 'user', content: `Bet title: "${bet.title}"\nEvent date: ${bet.event_date || 'not specified'}\nResolution criteria: ${bet.resolution_criteria || 'none'}` }],
+      systemPrompt
+    );
+    const text = response.content[0].text.trim();
+    const jsonStr = text.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    return JSON.parse(jsonStr);
+  } catch (err) {
+    console.error('Bet timing check error:', err.message);
+    // On error, allow the bet (benefit of the doubt)
+    return { allowed: true };
+  }
 }
 
 // ── Arbitrate a bet using Claude + web search ──
@@ -981,6 +1039,17 @@ async function handleRequest(req, res) {
     const bet = bets.find(b => b.id === betId);
     if (!bet) return sendJSON(res, 404, { error: 'Bet not found' });
     if (bet.status !== 'open') return sendJSON(res, 400, { error: 'Bet is already resolved' });
+
+    // Check if event has already started or ended (AI timing check)
+    try {
+      const timingCheck = await checkBetTimingWithAI(bet);
+      if (!timingCheck.allowed) {
+        return sendJSON(res, 400, { error: timingCheck.reason || 'This event has already started or ended. Betting is closed.' });
+      }
+    } catch (timingErr) {
+      console.error('Timing check error (allowing bet):', timingErr.message);
+      // On error, allow the bet — benefit of the doubt
+    }
 
     if (dbPool) {
       try {
