@@ -668,6 +668,34 @@ async function loadBetsFromDB() {
         }
         console.log('Migrated seed bets to ***REMOVED*** ownership with real odds');
       }
+
+      // Migration: recalculate ALL bet odds from actual UserBets counts
+      console.log('Recalculating odds for all bets from actual vote counts...');
+      for (const bet of bets) {
+        try {
+          const ubResult = await dbPool.request()
+            .input('betId', sql.Int, bet.id)
+            .query('SELECT Side, COUNT(*) as cnt FROM B3tz_UserBets WHERE BetId = @betId GROUP BY Side');
+          let yc = 0, nc = 0;
+          for (const r of ubResult.recordset) {
+            if (r.Side === 'yes') yc = r.cnt;
+            if (r.Side === 'no') nc = r.cnt;
+          }
+          const total = yc + nc;
+          const yo = total > 0 ? Math.round((yc / total) * 100) : 50;
+          const no_ = 100 - yo;
+          if (bet.yes_odds !== yo || bet.no_odds !== no_ || bet.yes_count !== yc || bet.no_count !== nc) {
+            await dbPool.request()
+              .input('id', sql.Int, bet.id)
+              .input('yc', sql.Int, yc).input('nc', sql.Int, nc)
+              .input('yo', sql.Int, yo).input('no', sql.Int, no_)
+              .query('UPDATE B3tz_Bets SET YesCount = @yc, NoCount = @nc, YesOdds = @yo, NoOdds = @no WHERE Id = @id');
+            bet.yes_count = yc; bet.no_count = nc;
+            bet.yes_odds = yo; bet.no_odds = no_;
+          }
+        } catch (mErr) { console.error('Odds migration error for bet', bet.id, mErr.message); }
+      }
+      console.log('Odds recalculation complete');
     }
   } catch (e) {
     console.error('Error loading bets from DB:', e.message);
@@ -1523,8 +1551,8 @@ async function handleRequest(req, res) {
       original_input: original_input || title,
       created_by: user.DisplayName || user.Username || 'Anonymous',
       created_by_user_id: user.Id || user.id,
-      yes_odds: side === 'yes' ? 55 : 45,
-      no_odds: side === 'yes' ? 45 : 55,
+      yes_odds: side === 'yes' ? 100 : 0,
+      no_odds: side === 'yes' ? 0 : 100,
       yes_count: side === 'yes' ? 1 : 0,
       no_count: side === 'no' ? 1 : 0,
       volume: 0,
