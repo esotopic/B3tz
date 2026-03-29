@@ -955,19 +955,18 @@ footer .footer-text {
 .bet-btn.yes.my-pick { background: rgba(0,230,118,0.2); }
 .bet-btn.no.my-pick { background: rgba(255,82,82,0.2); }
 
-/* ═══ MY BETS VIEW ═══ */
-.my-bets-header {
+/* ═══ VIEW FILTER BUTTONS ═══ */
+.view-filters {
   display: flex;
+  gap: 8px;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
 }
-.my-bets-header .back-btn {
-  background: var(--surface);
+.view-filter-btn {
+  padding: 6px 16px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
-  padding: 8px 14px;
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text-dim);
   font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 500;
@@ -976,56 +975,23 @@ footer .footer-text {
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
-.my-bets-header .back-btn:hover { background: var(--card); border-color: var(--border-hover); }
-
-.my-bets-stats {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-.my-bets-stat {
+.view-filter-btn:hover {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 20px;
-  text-align: center;
-  flex: 1;
-  min-width: 120px;
-}
-.my-bets-stat .stat-num {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 24px;
-  font-weight: 700;
-}
-.my-bets-stat .stat-num.yes-color { color: var(--yes); }
-.my-bets-stat .stat-num.no-color { color: var(--no); }
-.my-bets-stat .stat-lbl {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.nav-my-bets {
-  padding: 10px 12px;
-  border: none;
-  background: transparent;
+  border-color: var(--border-hover);
   color: var(--text);
-  font-family: Inter, sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  text-align: left;
-  border-radius: 8px;
-  cursor: pointer;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
-.nav-my-bets:hover { background: var(--surface); }
+.view-filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.view-filter-btn.active:hover {
+  background: #6a3de8;
+  border-color: #6a3de8;
+}
 .resolution-badge {
   display: inline-flex;
   align-items: center;
@@ -1063,7 +1029,6 @@ footer .footer-text {
             <div style="font-weight:600;font-size:14px;" id="dropdownName"></div>
             <div style="font-size:12px;color:var(--text-muted);" id="dropdownEmail"></div>
           </div>
-          <button class="nav-my-bets" onclick="showMyBets(); closeUserMenu();">🎯 My Bets</button>
           <button onclick="doLogout()" style="width:100%;padding:10px 12px;border:none;background:transparent;color:var(--no);font-family:Inter,sans-serif;font-size:14px;font-weight:500;text-align:left;border-radius:8px;cursor:pointer;" onmouseover="this.style.background='var(--no-bg)'" onmouseout="this.style.background='transparent'">Sign Out</button>
         </div>
       </div>
@@ -1105,7 +1070,14 @@ footer .footer-text {
 
 <section class="bets-section">
   <div class="section-header">
-    <h2 class="section-title" id="sectionTitle">All Markets</h2>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <h2 class="section-title" id="sectionTitle">All Markets</h2>
+      <div class="view-filters" id="viewFilters" style="display:none;">
+        <button class="view-filter-btn active" id="filterAll" onclick="setViewFilter('all')">All Bets</button>
+        <button class="view-filter-btn" id="filterMine" onclick="setViewFilter('mybets')">My Bets</button>
+        <button class="view-filter-btn" id="filterNemesis" onclick="setViewFilter('nemesis')">Nemesis Bets</button>
+      </div>
+    </div>
     <span class="bet-count" id="betCount"></span>
   </div>
   <div class="bet-grid" id="betGrid">
@@ -1317,6 +1289,7 @@ async function doLogin() {
     document.getElementById('loginPassword').value = '';
     errorEl.style.display = 'none';
     await loadMyBets();
+    updateViewFiltersVisibility();
     renderBets();
   } catch (e) {
     errorEl.textContent = 'Network error. Please try again.';
@@ -1364,6 +1337,7 @@ async function doRegister() {
     document.getElementById('regPassword').value = '';
     errorEl.style.display = 'none';
     await loadMyBets();
+    updateViewFiltersVisibility();
     renderBets();
   } catch (e) {
     errorEl.textContent = 'Network error. Please try again.';
@@ -1383,6 +1357,9 @@ async function doLogout() {
   updateNavUI();
   closeUserMenu();
   document.getElementById('sectionTitle').textContent = 'All Markets';
+  document.querySelectorAll('.view-filter-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('filterAll').classList.add('active');
+  updateViewFiltersVisibility();
   renderBets();
   showToast('Signed out. See you next time!');
 }
@@ -1430,6 +1407,7 @@ async function checkAuth() {
       currentUser = data.user;
       updateNavUI();
       await loadMyBets();
+      updateViewFiltersVisibility();
       renderBets(); // re-render with my bet cues
     }
   } catch (e) { /* not logged in */ }
@@ -1464,9 +1442,11 @@ function renderBets() {
   const query = document.getElementById('searchInput').value.toLowerCase().trim();
   let filtered = allBets;
 
-  // If My Bets view, only show bets user has placed
+  // Filter by view mode
   if (viewMode === 'mybets') {
     filtered = filtered.filter(b => myBetsMap[b.id]);
+  } else if (viewMode === 'nemesis') {
+    filtered = []; // Nemesis feature coming soon
   }
 
   if (activeCategory !== 'All') {
@@ -1488,27 +1468,14 @@ function renderBets() {
   if (filtered.length === 0) {
     const emptyMsg = viewMode === 'mybets'
       ? `<div class="no-results"><div class="big-emoji">🎯</div><h3>No bets yet</h3><p>Place your first bet on any market or create your own!</p></div>`
+      : viewMode === 'nemesis'
+      ? `<div class="no-results"><div class="big-emoji">👿</div><h3>Nemesis Bets coming soon</h3><p>Track and challenge your rivals — stay tuned!</p></div>`
       : `<div class="no-results"><div class="big-emoji">🔍</div><h3>No bets found</h3><p>Try a different search or create a new bet!</p></div>`;
     grid.innerHTML = emptyMsg;
     return;
   }
 
-  // Build My Bets stats bar if in mybets view
-  let myBetsHeader = '';
-  if (viewMode === 'mybets') {
-    const myBetsList = Object.entries(myBetsMap);
-    const yesCount = myBetsList.filter(([,s]) => s === 'yes').length;
-    const noCount = myBetsList.filter(([,s]) => s === 'no').length;
-    myBetsHeader = `
-      <div class="my-bets-stats">
-        <div class="my-bets-stat"><div class="stat-num">${myBetsList.length}</div><div class="stat-lbl">Total Bets</div></div>
-        <div class="my-bets-stat"><div class="stat-num yes-color">${yesCount}</div><div class="stat-lbl">Yes Picks</div></div>
-        <div class="my-bets-stat"><div class="stat-num no-color">${noCount}</div><div class="stat-lbl">No Picks</div></div>
-      </div>
-    `;
-  }
-
-  grid.innerHTML = (viewMode === 'mybets' ? myBetsHeader : '') + filtered.map(bet => {
+  grid.innerHTML = filtered.map(bet => {
     const isResolved = bet.status === 'resolved';
     const resolutionBadge = isResolved
       ? `<span class="resolution-badge ${bet.resolution}">${bet.resolution === 'yes' ? '✓ YES' : '✕ NO'}</span>`
@@ -1577,6 +1544,8 @@ function resetFilters() {
   activeCategory = 'All';
   document.getElementById('searchInput').value = '';
   document.getElementById('sectionTitle').textContent = 'All Markets';
+  document.querySelectorAll('.view-filter-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('filterAll').classList.add('active');
   renderCategories();
   renderBets();
 }
@@ -1593,29 +1562,17 @@ async function loadMyBets() {
   } catch (e) { /* ignore */ }
 }
 
-function showMyBets() {
-  if (!currentUser) { openLoginModal(); return; }
-  viewMode = 'mybets';
-  activeCategory = 'All';
-  document.getElementById('sectionTitle').innerHTML = `
-    <div class="my-bets-header">
-      <button class="back-btn" onclick="showAllBets()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        Back
-      </button>
-      <span>My Bets</span>
-    </div>
-  `;
-  renderCategories();
+function setViewFilter(mode) {
+  if ((mode === 'mybets' || mode === 'nemesis') && !currentUser) { openLoginModal(); return; }
+  viewMode = mode;
+  document.querySelectorAll('.view-filter-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(mode === 'mybets' ? 'filterMine' : mode === 'nemesis' ? 'filterNemesis' : 'filterAll').classList.add('active');
   renderBets();
 }
 
-function showAllBets() {
-  viewMode = 'all';
-  activeCategory = 'All';
-  document.getElementById('sectionTitle').textContent = 'All Markets';
-  renderCategories();
-  renderBets();
+function updateViewFiltersVisibility() {
+  const filtersEl = document.getElementById('viewFilters');
+  if (filtersEl) filtersEl.style.display = currentUser ? 'flex' : 'none';
 }
 
 document.getElementById('searchInput').addEventListener('input', () => {
@@ -1679,6 +1636,7 @@ async function placeBetFromSignIn() {
     currentUser = data.user;
     updateNavUI();
     await loadMyBets();
+    updateViewFiltersVisibility();
     // Clear inputs
     document.querySelector('#signInModal .modal-input[type="text"]').value = '';
     document.querySelector('#signInModal .modal-input[type="password"]').value = '';
