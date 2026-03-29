@@ -922,6 +922,110 @@ footer .footer-text {
 /* Resolved bet styling */
 .bet-card.resolved { opacity: 0.7; }
 .bet-card.resolved .bet-actions { pointer-events: none; opacity: 0.5; }
+
+/* ═══ MY BET VISUAL CUES ═══ */
+.bet-card.my-bet-yes {
+  border-color: rgba(0,230,118,0.3);
+  box-shadow: inset 0 0 0 1px rgba(0,230,118,0.08), 0 0 20px rgba(0,230,118,0.06);
+}
+.bet-card.my-bet-no {
+  border-color: rgba(255,82,82,0.3);
+  box-shadow: inset 0 0 0 1px rgba(255,82,82,0.08), 0 0 20px rgba(255,82,82,0.06);
+}
+.bet-card.my-bet-yes:hover { border-color: rgba(0,230,118,0.45); box-shadow: 0 8px 40px rgba(0,230,118,0.12); }
+.bet-card.my-bet-no:hover { border-color: rgba(255,82,82,0.45); box-shadow: 0 8px 40px rgba(255,82,82,0.12); }
+
+.my-pick-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.my-pick-badge.yes { background: rgba(0,230,118,0.12); color: var(--yes); }
+.my-pick-badge.no { background: rgba(255,82,82,0.12); color: var(--no); }
+
+.bet-btn.my-pick {
+  box-shadow: inset 0 0 0 2px currentColor;
+  font-weight: 800;
+}
+.bet-btn.yes.my-pick { background: rgba(0,230,118,0.2); }
+.bet-btn.no.my-pick { background: rgba(255,82,82,0.2); }
+
+/* ═══ MY BETS VIEW ═══ */
+.my-bets-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.my-bets-header .back-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 8px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.my-bets-header .back-btn:hover { background: var(--card); border-color: var(--border-hover); }
+
+.my-bets-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.my-bets-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 20px;
+  text-align: center;
+  flex: 1;
+  min-width: 120px;
+}
+.my-bets-stat .stat-num {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+}
+.my-bets-stat .stat-num.yes-color { color: var(--yes); }
+.my-bets-stat .stat-num.no-color { color: var(--no); }
+.my-bets-stat .stat-lbl {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nav-my-bets {
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-my-bets:hover { background: var(--surface); }
 .resolution-badge {
   display: inline-flex;
   align-items: center;
@@ -959,6 +1063,7 @@ footer .footer-text {
             <div style="font-weight:600;font-size:14px;" id="dropdownName"></div>
             <div style="font-size:12px;color:var(--text-muted);" id="dropdownEmail"></div>
           </div>
+          <button class="nav-my-bets" onclick="showMyBets(); closeUserMenu();">🎯 My Bets</button>
           <button onclick="doLogout()" style="width:100%;padding:10px 12px;border:none;background:transparent;color:var(--no);font-family:Inter,sans-serif;font-size:14px;font-weight:500;text-align:left;border-radius:8px;cursor:pointer;" onmouseover="this.style.background='var(--no-bg)'" onmouseout="this.style.background='transparent'">Sign Out</button>
         </div>
       </div>
@@ -1138,6 +1243,8 @@ let activeCategory = 'All';
 let pendingBet = null;
 let selectedPosition = 'yes';
 let currentUser = null;
+let myBetsMap = {}; // { betId: 'yes'|'no' }
+let viewMode = 'all'; // 'all' or 'mybets'
 
 // ══════════════════════════════
 // ── AUTH FUNCTIONS ──
@@ -1209,6 +1316,8 @@ async function doLogin() {
     document.getElementById('loginInput').value = '';
     document.getElementById('loginPassword').value = '';
     errorEl.style.display = 'none';
+    await loadMyBets();
+    renderBets();
   } catch (e) {
     errorEl.textContent = 'Network error. Please try again.';
     errorEl.style.display = 'block';
@@ -1254,6 +1363,8 @@ async function doRegister() {
     document.getElementById('regUsername').value = '';
     document.getElementById('regPassword').value = '';
     errorEl.style.display = 'none';
+    await loadMyBets();
+    renderBets();
   } catch (e) {
     errorEl.textContent = 'Network error. Please try again.';
     errorEl.style.display = 'block';
@@ -1267,8 +1378,12 @@ async function doLogout() {
     await fetch('/api/logout', { method: 'POST' });
   } catch (e) { /* ignore */ }
   currentUser = null;
+  myBetsMap = {};
+  viewMode = 'all';
   updateNavUI();
   closeUserMenu();
+  document.getElementById('sectionTitle').textContent = 'All Markets';
+  renderBets();
   showToast('Signed out. See you next time!');
 }
 
@@ -1314,6 +1429,8 @@ async function checkAuth() {
     if (data.user) {
       currentUser = data.user;
       updateNavUI();
+      await loadMyBets();
+      renderBets(); // re-render with my bet cues
     }
   } catch (e) { /* not logged in */ }
 }
@@ -1347,6 +1464,11 @@ function renderBets() {
   const query = document.getElementById('searchInput').value.toLowerCase().trim();
   let filtered = allBets;
 
+  // If My Bets view, only show bets user has placed
+  if (viewMode === 'mybets') {
+    filtered = filtered.filter(b => myBetsMap[b.id]);
+  }
+
   if (activeCategory !== 'All') {
     filtered = filtered.filter(b => b.category === activeCategory);
   }
@@ -1364,29 +1486,45 @@ function renderBets() {
   count.textContent = `${filtered.length} bet${filtered.length !== 1 ? 's' : ''}`;
 
   if (filtered.length === 0) {
-    grid.innerHTML = `
-      <div class="no-results">
-        <div class="big-emoji">🔍</div>
-        <h3>No bets found</h3>
-        <p>Try a different search or create a new bet!</p>
-      </div>
-    `;
+    const emptyMsg = viewMode === 'mybets'
+      ? `<div class="no-results"><div class="big-emoji">🎯</div><h3>No bets yet</h3><p>Place your first bet on any market or create your own!</p></div>`
+      : `<div class="no-results"><div class="big-emoji">🔍</div><h3>No bets found</h3><p>Try a different search or create a new bet!</p></div>`;
+    grid.innerHTML = emptyMsg;
     return;
   }
 
-  grid.innerHTML = filtered.map(bet => {
+  // Build My Bets stats bar if in mybets view
+  let myBetsHeader = '';
+  if (viewMode === 'mybets') {
+    const myBetsList = Object.entries(myBetsMap);
+    const yesCount = myBetsList.filter(([,s]) => s === 'yes').length;
+    const noCount = myBetsList.filter(([,s]) => s === 'no').length;
+    myBetsHeader = `
+      <div class="my-bets-stats">
+        <div class="my-bets-stat"><div class="stat-num">${myBetsList.length}</div><div class="stat-lbl">Total Bets</div></div>
+        <div class="my-bets-stat"><div class="stat-num yes-color">${yesCount}</div><div class="stat-lbl">Yes Picks</div></div>
+        <div class="my-bets-stat"><div class="stat-num no-color">${noCount}</div><div class="stat-lbl">No Picks</div></div>
+      </div>
+    `;
+  }
+
+  grid.innerHTML = (viewMode === 'mybets' ? myBetsHeader : '') + filtered.map(bet => {
     const isResolved = bet.status === 'resolved';
     const resolutionBadge = isResolved
       ? `<span class="resolution-badge ${bet.resolution}">${bet.resolution === 'yes' ? '✓ YES' : '✕ NO'}</span>`
       : '';
+    const myPick = myBetsMap[bet.id] || null;
+    const myPickClass = myPick ? ` my-bet-${myPick}` : '';
+    const myPickBadge = myPick ? `<span class="my-pick-badge ${myPick}">YOU: ${myPick.toUpperCase()}</span>` : '';
     return `
-    <div class="bet-card${bet.featured ? ' featured' : ''}${isResolved ? ' resolved' : ''}" title="${bet.resolution_criteria ? bet.resolution_criteria.replace(/"/g, '&quot;') : ''}">
+    <div class="bet-card${bet.featured ? ' featured' : ''}${isResolved ? ' resolved' : ''}${myPickClass}" title="${bet.resolution_criteria ? bet.resolution_criteria.replace(/"/g, '&quot;') : ''}">
       <div class="card-top">
         <div class="card-icon">${bet.icon}</div>
         <div class="card-info">
           <div class="card-title">${bet.title} ${resolutionBadge}</div>
           <div class="card-meta">
             <span class="cat-tag">${bet.category}</span>
+            ${myPickBadge}
             <span class="date-tag">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               ${bet.event_date ? formatDate(bet.event_date) : 'TBD'}
@@ -1399,11 +1537,11 @@ function renderBets() {
         <div class="odds-fill" style="width: ${bet.yes_odds}%"></div>
       </div>
       <div class="bet-actions">
-        <button class="bet-btn yes" onclick="event.stopPropagation(); handleBet(${bet.id}, 'yes')" ${isResolved ? 'disabled' : ''}>
+        <button class="bet-btn yes${myPick === 'yes' ? ' my-pick' : ''}" onclick="event.stopPropagation(); handleBet(${bet.id}, 'yes')" ${isResolved ? 'disabled' : ''}>
           <span class="pct">${bet.yes_odds}%</span>
           <span class="label">Yes</span>
         </button>
-        <button class="bet-btn no" onclick="event.stopPropagation(); handleBet(${bet.id}, 'no')" ${isResolved ? 'disabled' : ''}>
+        <button class="bet-btn no${myPick === 'no' ? ' my-pick' : ''}" onclick="event.stopPropagation(); handleBet(${bet.id}, 'no')" ${isResolved ? 'disabled' : ''}>
           <span class="pct">${bet.no_odds}%</span>
           <span class="label">No</span>
         </button>
@@ -1435,8 +1573,46 @@ function filterCategory(cat) {
 }
 
 function resetFilters() {
+  viewMode = 'all';
   activeCategory = 'All';
   document.getElementById('searchInput').value = '';
+  document.getElementById('sectionTitle').textContent = 'All Markets';
+  renderCategories();
+  renderBets();
+}
+
+async function loadMyBets() {
+  if (!currentUser) { myBetsMap = {}; return; }
+  try {
+    const res = await fetch('/api/my-bets');
+    const data = await res.json();
+    if (data.userBets) {
+      myBetsMap = {};
+      data.userBets.forEach(ub => { myBetsMap[ub.betId] = ub.side; });
+    }
+  } catch (e) { /* ignore */ }
+}
+
+function showMyBets() {
+  if (!currentUser) { openLoginModal(); return; }
+  viewMode = 'mybets';
+  activeCategory = 'All';
+  document.getElementById('sectionTitle').innerHTML = `
+    <div class="my-bets-header">
+      <button class="back-btn" onclick="showAllBets()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+      <span>My Bets</span>
+    </div>
+  `;
+  renderCategories();
+  renderBets();
+}
+
+function showAllBets() {
+  viewMode = 'all';
+  activeCategory = 'All';
   document.getElementById('sectionTitle').textContent = 'All Markets';
   renderCategories();
   renderBets();
@@ -1502,6 +1678,7 @@ async function placeBetFromSignIn() {
     }
     currentUser = data.user;
     updateNavUI();
+    await loadMyBets();
     // Clear inputs
     document.querySelector('#signInModal .modal-input[type="text"]').value = '';
     document.querySelector('#signInModal .modal-input[type="password"]').value = '';
@@ -1514,10 +1691,42 @@ async function placeBetFromSignIn() {
   btn.disabled = false;
 }
 
-function placeBet() {
+async function placeBet() {
   if (!pendingBet) return;
+  const { bet, side } = pendingBet;
   closeModals();
-  showToast(`🎯 Bet placed! You said ${pendingBet.side.toUpperCase()} on "${pendingBet.bet.title}"`);
+
+  try {
+    const res = await fetch('/api/bets/place', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ betId: bet.id, side })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast(data.error || 'Failed to place bet');
+      pendingBet = null;
+      return;
+    }
+
+    // Update local state
+    myBetsMap[bet.id] = side;
+    if (data.bet) {
+      const idx = allBets.findIndex(b => b.id === bet.id);
+      if (idx !== -1) {
+        allBets[idx].yes_count = data.bet.yes_count;
+        allBets[idx].no_count = data.bet.no_count;
+        allBets[idx].yes_odds = data.bet.yes_odds;
+        allBets[idx].no_odds = data.bet.no_odds;
+      }
+    }
+    renderBets();
+    updateStats();
+    showToast(`🎯 Bet placed! You said ${side.toUpperCase()} on "${bet.title}"`);
+  } catch (e) {
+    showToast('Network error placing bet');
+  }
   pendingBet = null;
 }
 
@@ -1688,6 +1897,7 @@ async function confirmCreateBet() {
 
     // Add to local list and refresh
     allBets.unshift(data.bet);
+    myBetsMap[data.bet.id] = selectedPosition;
     closeModals();
     renderBets();
     updateStats();

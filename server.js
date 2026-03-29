@@ -100,10 +100,24 @@ async function ensureTables() {
         CreatedDate DATETIME2 DEFAULT GETUTCDATE()
       );
     END
+
+    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'B3tz_UserBets')
+    BEGIN
+      CREATE TABLE B3tz_UserBets (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        UserId INT NOT NULL,
+        BetId INT NOT NULL,
+        Side NVARCHAR(3) NOT NULL,
+        PlacedDate DATETIME2 DEFAULT GETUTCDATE(),
+        FOREIGN KEY (UserId) REFERENCES B3tz_Users(Id),
+        FOREIGN KEY (BetId) REFERENCES B3tz_Bets(Id)
+      );
+      CREATE UNIQUE INDEX IX_B3tz_UserBets_Unique ON B3tz_UserBets(UserId, BetId);
+    END
   `;
   try {
     await dbPool.request().query(query);
-    console.log('B3tz tables ready (Users, Sessions, Bets)');
+    console.log('B3tz tables ready (Users, Sessions, Bets, UserBets)');
   } catch (e) {
     console.error('Table creation error:', e.message);
   }
@@ -644,6 +658,124 @@ async function handleRequest(req, res) {
     return sendJSON(res, 200, { categories });
   }
 
+  // ── API: Place a bet (record user's pick) ──
+  if (pathname === '/api/bets/place' && req.method === 'POST') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in to place bets' });
+
+    const body = await parseBody(req);
+    const { betId, side } = body;
+    const betSide = side === 'no' ? 'no' : 'yes';
+    const userId = user.Id || user.id;
+
+    const bet = bets.find(b => b.id === betId);
+    if (!bet) return sendJSON(res, 404, { error: 'Bet not found' });
+    if (bet.status !== 'open') return sendJSON(res, 400, { error: 'Bet is already resolved' });
+
+    if (dbPool) {
+      try {
+        // Check if user already bet on this
+        const existing = await dbPool.request()
+          .input('userId', sql.Int, userId)
+          .input('betId', sql.Int, betId)
+          .query('SELECT Id, Side FROM B3tz_UserBets WHERE UserId = @userId AND BetId = @betId');
+
+        if (existing.recordset.length > 0) {
+          const oldSide = existing.recordset[0].Side;
+          if (oldSide === betSide) {
+            return sendJSON(res, 200, { message: 'Already bet this side', side: betSide, changed: false });
+          }
+          // Switch sides
+          await dbPool.request()
+            .input('id', sql.Int, existing.recordset[0].Id)
+            .input('side', sql.NVarChar, betSide)
+            .query('UPDATE B3tz_UserBets SET Side = @side, PlacedDate = GETUTCDATE() WHERE Id = @id');
+
+          // Update counts: remove from old, add to new
+          const yesAdj = betSide === 'yes' ? 1 : -1;
+          const noAdj = betSide === 'no' ? 1 : -1;
+          await dbPool.request()
+            .input('betId', sql.Int, betId)
+            .input('yesAdj', sql.Int, yesAdj)
+            .input('noAdj', sql.Int, noAdj)
+            .query('UPDATE B3tz_Bets SET YesCount = YesCount + @yesAdj, NoCount = NoCount + @noAdj WHERE Id = @betId');
+
+          bet.yes_count += yesAdj;
+          bet.no_count += noAdj;
+        } else {
+          // New bet placement
+          await dbPool.request()
+            .input('userId', sql.Int, userId)
+            .input('betId', sql.Int, betId)
+            .input('side', sql.NVarChar, betSide)
+            .query('INSERT INTO B3tz_UserBets (UserId, BetId, Side) VALUES (@userId, @betId, @side)');
+
+          const field = betSide === 'yes' ? 'YesCount' : 'NoCount';
+          await dbPool.request()
+            .input('betId', sql.Int, betId)
+            .query(`UPDATE B3tz_Bets SET ${field} = ${field} + 1 WHERE Id = @betId`);
+
+          if (betSide === 'yes') bet.yes_count++;
+          else bet.no_count++;
+        }
+
+        // Recalculate odds
+        const total = bet.yes_count + bet.no_count;
+        if (total > 0) {
+          bet.yes_odds = Math.round((bet.yes_count / total) * 100);
+          bet.no_odds = 100 - bet.yes_odds;
+          await dbPool.request()
+            .input('betId', sql.Int, betId)
+            .input('yesOdds', sql.Int, bet.yes_odds)
+            .input('noOdds', sql.Int, bet.no_odds)
+            .query('UPDATE B3tz_Bets SET YesOdds = @yesOdds, NoOdds = @noOdds WHERE Id = @betId');
+        }
+
+        return sendJSON(res, 200, { message: 'Bet placed', side: betSide, changed: true, bet });
+      } catch (e) {
+        console.error('Place bet error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to place bet' });
+      }
+    } else {
+      // Memory mode — just update counts
+      if (betSide === 'yes') bet.yes_count++;
+      else bet.no_count++;
+      const total = bet.yes_count + bet.no_count;
+      bet.yes_odds = Math.round((bet.yes_count / total) * 100);
+      bet.no_odds = 100 - bet.yes_odds;
+      return sendJSON(res, 200, { message: 'Bet placed', side: betSide, changed: true, bet });
+    }
+  }
+
+  // ── API: Get user's bets ──
+  if (pathname === '/api/my-bets' && req.method === 'GET') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in' });
+
+    const userId = user.Id || user.id;
+
+    if (dbPool) {
+      try {
+        const result = await dbPool.request()
+          .input('userId', sql.Int, userId)
+          .query(`SELECT ub.BetId, ub.Side, ub.PlacedDate FROM B3tz_UserBets ub WHERE ub.UserId = @userId ORDER BY ub.PlacedDate DESC`);
+
+        const userBets = result.recordset.map(r => ({
+          betId: r.BetId,
+          side: r.Side,
+          placedDate: r.PlacedDate
+        }));
+
+        return sendJSON(res, 200, { userBets });
+      } catch (e) {
+        console.error('My bets error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to load your bets' });
+      }
+    } else {
+      return sendJSON(res, 200, { userBets: [] });
+    }
+  }
+
   // ══════════════════════════════════
   // ── API: AI Bet Validation ──
   // ══════════════════════════════════
@@ -722,6 +854,14 @@ async function handleRequest(req, res) {
                   VALUES (@title, @category, @icon, @eventDate, @resCriteria, @originalInput, @userId, @createdBy, @yesOdds, @noOdds, @yesCount, @noCount)`);
 
         const betId = result.recordset[0].Id;
+        // Also record the creator's initial bet position
+        try {
+          await dbPool.request()
+            .input('userId', sql.Int, newBet.created_by_user_id)
+            .input('betId', sql.Int, betId)
+            .input('side', sql.NVarChar, side)
+            .query('INSERT INTO B3tz_UserBets (UserId, BetId, Side) VALUES (@userId, @betId, @side)');
+        } catch (ube) { /* ignore if fails */ }
         const apiBet = { id: betId, ...newBet };
         bets.unshift(apiBet);
         return sendJSON(res, 201, { bet: apiBet });
