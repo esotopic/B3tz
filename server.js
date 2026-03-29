@@ -114,10 +114,41 @@ async function ensureTables() {
       );
       CREATE UNIQUE INDEX IX_B3tz_UserBets_Unique ON B3tz_UserBets(UserId, BetId);
     END
+
+    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'B3tz_Challenges')
+    BEGIN
+      CREATE TABLE B3tz_Challenges (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Code NVARCHAR(20) NOT NULL UNIQUE,
+        SenderUserId INT NOT NULL,
+        BetId INT NOT NULL,
+        SenderSide NVARCHAR(3),
+        RecipientUserId INT,
+        CreatedDate DATETIME2 DEFAULT GETUTCDATE(),
+        ClaimedDate DATETIME2,
+        FOREIGN KEY (SenderUserId) REFERENCES B3tz_Users(Id),
+        FOREIGN KEY (BetId) REFERENCES B3tz_Bets(Id)
+      );
+      CREATE INDEX IX_B3tz_Challenges_Code ON B3tz_Challenges(Code);
+    END
+
+    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'B3tz_Rivals')
+    BEGIN
+      CREATE TABLE B3tz_Rivals (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        UserId INT NOT NULL,
+        RivalUserId INT NOT NULL,
+        Source NVARCHAR(20) DEFAULT 'challenge',
+        CreatedDate DATETIME2 DEFAULT GETUTCDATE(),
+        FOREIGN KEY (UserId) REFERENCES B3tz_Users(Id),
+        FOREIGN KEY (RivalUserId) REFERENCES B3tz_Users(Id)
+      );
+      CREATE UNIQUE INDEX IX_B3tz_Rivals_Unique ON B3tz_Rivals(UserId, RivalUserId);
+    END
   `;
   try {
     await dbPool.request().query(query);
-    console.log('B3tz tables ready (Users, Sessions, Bets, UserBets)');
+    console.log('B3tz tables ready (Users, Sessions, Bets, UserBets, Challenges, Rivals)');
   } catch (e) {
     console.error('Table creation error:', e.message);
   }
@@ -494,6 +525,17 @@ function setCookie(name, value, maxAge) {
   return `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function generateChallengeCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 // ══════════════════════════════
 // ── Route handler ──
 // ══════════════════════════════
@@ -665,7 +707,7 @@ async function handleRequest(req, res) {
     if (!user) return sendJSON(res, 401, { error: 'Must be logged in to place bets' });
 
     const body = await parseBody(req);
-    const { betId, side } = body;
+    const { betId, side, challengeCode } = body;
     const betSide = side === 'no' ? 'no' : 'yes';
     const userId = user.Id || user.id;
 
@@ -732,7 +774,44 @@ async function handleRequest(req, res) {
             .query('UPDATE B3tz_Bets SET YesOdds = @yesOdds, NoOdds = @noOdds WHERE Id = @betId');
         }
 
-        return sendJSON(res, 200, { message: 'Bet placed', side: betSide, changed: true, bet });
+        // Claim challenge if provided → auto-create mutual rivalry
+        let rivalCreated = false;
+        if (challengeCode && dbPool) {
+          try {
+            const chResult = await dbPool.request()
+              .input('code', sql.NVarChar, challengeCode)
+              .query('SELECT Id, SenderUserId, BetId FROM B3tz_Challenges WHERE Code = @code AND ClaimedDate IS NULL');
+            if (chResult.recordset.length > 0) {
+              const ch = chResult.recordset[0];
+              if (ch.SenderUserId !== userId && ch.BetId === betId) {
+                // Claim the challenge
+                await dbPool.request()
+                  .input('id', sql.Int, ch.Id)
+                  .input('recipientId', sql.Int, userId)
+                  .query('UPDATE B3tz_Challenges SET RecipientUserId = @recipientId, ClaimedDate = GETUTCDATE() WHERE Id = @id');
+                // Create mutual rival entries (both directions)
+                try {
+                  await dbPool.request()
+                    .input('u1', sql.Int, ch.SenderUserId)
+                    .input('u2', sql.Int, userId)
+                    .query(`
+                      IF NOT EXISTS (SELECT 1 FROM B3tz_Rivals WHERE UserId = @u1 AND RivalUserId = @u2)
+                        INSERT INTO B3tz_Rivals (UserId, RivalUserId, Source) VALUES (@u1, @u2, 'challenge');
+                      IF NOT EXISTS (SELECT 1 FROM B3tz_Rivals WHERE UserId = @u2 AND RivalUserId = @u1)
+                        INSERT INTO B3tz_Rivals (UserId, RivalUserId, Source) VALUES (@u2, @u1, 'challenge');
+                    `);
+                  rivalCreated = true;
+                } catch (re) {
+                  console.error('Rival creation error:', re.message);
+                }
+              }
+            }
+          } catch (ce) {
+            console.error('Challenge claim error:', ce.message);
+          }
+        }
+
+        return sendJSON(res, 200, { message: 'Bet placed', side: betSide, changed: true, bet, rivalCreated });
       } catch (e) {
         console.error('Place bet error:', e.message);
         return sendJSON(res, 500, { error: 'Failed to place bet' });
@@ -812,6 +891,188 @@ async function handleRequest(req, res) {
     } else {
       return sendJSON(res, 200, { yesVoters: [], noVoters: [] });
     }
+  }
+
+  // ══════════════════════════════════════
+  // ── API: Create Challenge ──
+  // ══════════════════════════════════════
+
+  if (pathname === '/api/challenges' && req.method === 'POST') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in to send challenges' });
+
+    const body = await parseBody(req);
+    const { betId, side } = body;
+    if (!betId) return sendJSON(res, 400, { error: 'betId required' });
+
+    const bet = bets.find(b => b.id === parseInt(betId));
+    if (!bet) return sendJSON(res, 404, { error: 'Bet not found' });
+
+    const userId = user.Id || user.id;
+    const displayName = user.DisplayName || user.Username || user.username;
+    const code = generateChallengeCode();
+
+    if (dbPool) {
+      try {
+        await dbPool.request()
+          .input('code', sql.NVarChar, code)
+          .input('senderId', sql.Int, userId)
+          .input('betId', sql.Int, parseInt(betId))
+          .input('side', sql.NVarChar, side || null)
+          .query(`INSERT INTO B3tz_Challenges (Code, SenderUserId, BetId, SenderSide) VALUES (@code, @senderId, @betId, @side)`);
+      } catch (e) {
+        console.error('Create challenge error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to create challenge' });
+      }
+    }
+
+    const host = req.headers.host || 'b3tz.1000problems.com';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const challengeUrl = `${protocol}://${host}/c/${code}`;
+
+    // Build share text
+    const sideText = side ? (side === 'yes' ? 'YES' : 'NO') : '';
+    const oddsText = side ? ` (${side === 'yes' ? bet.yes_odds : bet.no_odds}% odds)` : '';
+    const shareText = `${bet.icon} ${displayName} bet ${sideText} on "${bet.title}"${oddsText} — think you know better?\n\n${challengeUrl}`;
+
+    return sendJSON(res, 201, { code, url: challengeUrl, shareText, bet: { title: bet.title, icon: bet.icon } });
+  }
+
+  // ══════════════════════════════════════
+  // ── API: Get Challenge Info ──
+  // ══════════════════════════════════════
+
+  if (pathname === '/api/challenges' && req.method === 'GET') {
+    const code = url.searchParams.get('code');
+    if (!code) return sendJSON(res, 400, { error: 'code required' });
+
+    if (dbPool) {
+      try {
+        const result = await dbPool.request()
+          .input('code', sql.NVarChar, code)
+          .query(`
+            SELECT c.Id, c.Code, c.SenderUserId, c.BetId, c.SenderSide, c.RecipientUserId, c.CreatedDate, c.ClaimedDate,
+                   u.Username AS SenderUsername, u.DisplayName AS SenderDisplayName
+            FROM B3tz_Challenges c
+            JOIN B3tz_Users u ON c.SenderUserId = u.Id
+            WHERE c.Code = @code
+          `);
+        if (result.recordset.length === 0) return sendJSON(res, 404, { error: 'Challenge not found' });
+        const ch = result.recordset[0];
+        return sendJSON(res, 200, {
+          challenge: {
+            id: ch.Id, code: ch.Code, betId: ch.BetId, senderSide: ch.SenderSide,
+            senderName: ch.SenderDisplayName || ch.SenderUsername,
+            claimed: !!ch.ClaimedDate
+          }
+        });
+      } catch (e) {
+        console.error('Get challenge error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to load challenge' });
+      }
+    } else {
+      return sendJSON(res, 404, { error: 'Challenge not found' });
+    }
+  }
+
+  // ══════════════════════════════════════════════════
+  // ── Challenge Link: /c/:code → OG tags + redirect ──
+  // ══════════════════════════════════════════════════
+
+  const challengeMatch = pathname.match(/^\/c\/([A-Za-z0-9]+)$/);
+  if (challengeMatch && req.method === 'GET') {
+    const code = challengeMatch[1];
+
+    // Default OG values
+    let ogTitle = 'You\'ve been challenged on B3tz!';
+    let ogDesc = 'Someone dared you to pick a side. Think you know better?';
+    let ogBetTitle = '';
+    let ogSenderName = 'Someone';
+    let ogSenderSide = '';
+    let ogBetId = '';
+    let ogOdds = '';
+    let ogIcon = '🎲';
+
+    if (dbPool) {
+      try {
+        const result = await dbPool.request()
+          .input('code', sql.NVarChar, code)
+          .query(`
+            SELECT c.BetId, c.SenderSide, u.Username, u.DisplayName,
+                   b.Title, b.Icon, b.YesOdds, b.NoOdds, b.Category, b.YesCount, b.NoCount
+            FROM B3tz_Challenges c
+            JOIN B3tz_Users u ON c.SenderUserId = u.Id
+            JOIN B3tz_Bets b ON c.BetId = b.Id
+            WHERE c.Code = @code
+          `);
+        if (result.recordset.length > 0) {
+          const r = result.recordset[0];
+          ogSenderName = r.DisplayName || r.Username;
+          ogBetTitle = r.Title;
+          ogIcon = r.Icon || '🎲';
+          ogBetId = r.BetId;
+          ogSenderSide = r.SenderSide;
+          ogOdds = r.SenderSide === 'yes' ? r.YesOdds : r.SenderSide === 'no' ? r.NoOdds : '';
+          ogTitle = `${ogIcon} ${ogSenderName} challenged you!`;
+          const sideLabel = ogSenderSide ? (ogSenderSide === 'yes' ? 'YES' : 'NO') : '';
+          ogDesc = ogSenderSide
+            ? `${ogSenderName} bet ${sideLabel} on "${ogBetTitle}"${ogOdds ? ` (${ogOdds}%)` : ''}. Think you know better?`
+            : `${ogSenderName} wants you to bet on "${ogBetTitle}". Pick a side!`;
+        }
+      } catch (e) {
+        console.error('Challenge OG lookup error:', e.message);
+      }
+    }
+
+    // Serve HTML with OpenGraph + Twitter Card meta tags, then redirect to app
+    const ogUrl = `https://b3tz.1000problems.com/c/${code}`;
+    const ogImage = `https://b3tz.1000problems.com/og-card.png`;
+    const redirectUrl = ogBetId ? `/#bet/${ogBetId}?challenge=${code}` : '/';
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(ogTitle)} | B3tz</title>
+
+  <!-- OpenGraph (Facebook, iMessage, WhatsApp, Telegram) -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="${ogUrl}">
+  <meta property="og:title" content="${escapeHtml(ogTitle)}">
+  <meta property="og:description" content="${escapeHtml(ogDesc)}">
+  <meta property="og:image" content="${ogImage}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="B3tz — Find Your Nemesis">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtml(ogTitle)}">
+  <meta name="twitter:description" content="${escapeHtml(ogDesc)}">
+  <meta name="twitter:image" content="${ogImage}">
+
+  <!-- Redirect to app after crawlers read the meta tags -->
+  <meta http-equiv="refresh" content="0;url=${redirectUrl}">
+  <style>
+    body { background: #0a0b0f; color: #e8e8ed; font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .loading { text-align: center; }
+    .loading h2 { margin-bottom: 8px; }
+    a { color: #7c4dff; }
+  </style>
+</head>
+<body>
+  <div class="loading">
+    <h2>${escapeHtml(ogTitle)}</h2>
+    <p>${escapeHtml(ogDesc)}</p>
+    <p>Redirecting to B3tz... <a href="${redirectUrl}">Click here if not redirected</a></p>
+  </div>
+  <script>window.location.replace("${redirectUrl}");</script>
+</body>
+</html>`;
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(html);
+    return;
   }
 
   // ══════════════════════════════════

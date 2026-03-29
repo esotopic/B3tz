@@ -1,0 +1,58 @@
+// Generate OG card image as a simple HTML file that can be screenshot'd
+// For now, we'll use an SVG served as PNG via content-type trick,
+// or better yet, generate a proper SVG that most platforms accept
+
+const fs = require('fs');
+const path = require('path');
+
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0b0f"/>
+      <stop offset="100%" style="stop-color:#161721"/>
+    </linearGradient>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c4dff"/>
+      <stop offset="50%" style="stop-color:#ff4081"/>
+      <stop offset="100%" style="stop-color:#ffd740"/>
+    </linearGradient>
+    <linearGradient id="accentLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7c4dff"/>
+      <stop offset="100%" style="stop-color:#ff4081"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Top accent line -->
+  <rect x="0" y="0" width="1200" height="4" fill="url(#accentLine)"/>
+
+  <!-- Glow effects -->
+  <circle cx="200" cy="315" r="300" fill="rgba(124,77,255,0.04)"/>
+  <circle cx="1000" cy="315" r="250" fill="rgba(255,64,129,0.03)"/>
+
+  <!-- Dice emoji -->
+  <text x="600" y="220" text-anchor="middle" font-size="100" fill="white">🎲</text>
+
+  <!-- B3TZ logo -->
+  <text x="600" y="340" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="96" fill="url(#logoGrad)" letter-spacing="-3">B3TZ</text>
+
+  <!-- Subtitle -->
+  <text x="600" y="400" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="28" fill="#e8e8ed">You've Been Challenged!</text>
+
+  <!-- Description -->
+  <text x="600" y="460" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="400" font-size="22" fill="#8b8b9e">Someone dared you to pick a side. Think you know better?</text>
+
+  <!-- Bottom tagline -->
+  <text x="600" y="560" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="16" fill="#55566a" letter-spacing="3" text-transform="uppercase">FIND YOUR NEMESIS • BET ON ANYTHING • NO REAL MONEY</text>
+
+  <!-- Bottom accent line -->
+  <rect x="0" y="626" width="1200" height="4" fill="url(#accentLine)"/>
+</svg>`;
+
+fs.writeFileSync(path.join(__dirname, 'public', 'og-card.svg'), svg);
+console.log('Generated og-card.svg');
+
+// Also create a simple HTML version that can be used as og:image if SVG isn't supported
+// Most platforms (iMessage, WhatsApp, Twitter) prefer PNG/JPG but will often accept SVG

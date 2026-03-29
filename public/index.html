@@ -1335,6 +1335,84 @@ footer .footer-text {
   line-height: 1.5;
 }
 
+/* Challenge button */
+.challenge-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}
+.btn-challenge {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--accent);
+  background: rgba(124,77,255,0.08);
+  color: var(--accent);
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-challenge:hover {
+  background: rgba(124,77,255,0.18);
+  box-shadow: 0 0 20px rgba(124,77,255,0.15);
+}
+.btn-challenge:active { transform: scale(0.97); }
+
+/* Challenge banner */
+.challenge-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(124,77,255,0.12), rgba(255,64,129,0.08));
+  border: 1px solid rgba(124,77,255,0.25);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  animation: bannerPulse 2s ease-in-out infinite alternate;
+}
+@keyframes bannerPulse {
+  0% { border-color: rgba(124,77,255,0.25); }
+  100% { border-color: rgba(255,64,129,0.35); }
+}
+.challenge-banner-icon { font-size: 28px; }
+.challenge-banner-text {
+  font-size: 16px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.challenge-banner-text strong { color: var(--accent); }
+.challenge-banner-text span { display: block; font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+
+/* Challenge copied toast */
+.challenge-toast {
+  position: fixed;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--card);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  padding: 20px 28px;
+  max-width: 380px;
+  width: 90%;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 30px rgba(124,77,255,0.15);
+  text-align: center;
+}
+.challenge-toast.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+.challenge-toast-icon { font-size: 36px; margin-bottom: 8px; }
+.challenge-toast-title { font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 4px; }
+.challenge-toast-sub { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .detail-layout {
@@ -1438,6 +1516,14 @@ footer .footer-text {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
         Back to bets
       </button>
+      <!-- Challenge banner (shown when opened via challenge link) -->
+      <div class="challenge-banner" id="challengeBanner" style="display:none;">
+        <div class="challenge-banner-icon">⚔️</div>
+        <div class="challenge-banner-text">
+          <strong id="challengeSenderName">Someone</strong> challenged you!
+          <span id="challengeSideText"></span>
+        </div>
+      </div>
       <div class="detail-header">
         <div class="detail-icon" id="dIcon"></div>
         <h1 class="detail-title" id="dTitle"></h1>
@@ -1477,6 +1563,11 @@ footer .footer-text {
       <div class="action-title">Place Your Bet</div>
       <div class="action-odds" id="dActionOdds"></div>
       <div class="action-info" id="dActionInfo"></div>
+      <div class="challenge-divider"></div>
+      <button class="btn-challenge" id="btnChallenge" onclick="challengeFriend()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h16M4 12l4-4M4 12l4 4M20 12l-4-4M20 12l-4 4"/></svg>
+        Challenge a Friend
+      </button>
     </div>
   </div>
 </div>
@@ -1604,6 +1695,13 @@ footer .footer-text {
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<!-- Challenge copied toast -->
+<div class="challenge-toast" id="challengeToast">
+  <div class="challenge-toast-icon">⚔️</div>
+  <div class="challenge-toast-title">Challenge copied!</div>
+  <div class="challenge-toast-sub">Paste it into iMessage, WhatsApp, Telegram, Twitter, email — anywhere you want to dare someone.</div>
+</div>
 
 <script>
 let allBets = [];
@@ -2010,6 +2108,21 @@ function showDetailView(betId) {
   document.getElementById('detailView').classList.add('active');
   window.scrollTo(0, 0);
 
+  // Show/hide challenge banner
+  const banner = document.getElementById('challengeBanner');
+  if (activeChallengeCode) {
+    banner.style.display = 'flex';
+    loadChallengeInfo(activeChallengeCode);
+  } else {
+    banner.style.display = 'none';
+  }
+
+  // Show/hide challenge button (only if logged in)
+  const btnChallenge = document.getElementById('btnChallenge');
+  if (btnChallenge) {
+    btnChallenge.style.display = currentUser ? 'flex' : 'none';
+  }
+
   // Fill header
   document.getElementById('dIcon').textContent = bet.icon;
   document.getElementById('dTitle').textContent = bet.title;
@@ -2079,14 +2192,22 @@ function showHomeView() {
   document.getElementById('detailView').classList.remove('active');
   document.getElementById('homeView').style.display = '';
   detailBetId = null;
+  activeChallengeCode = null;
 }
 
 // Hash routing
+let activeChallengeCode = null;
+
 function handleHashChange() {
   const hash = window.location.hash;
-  const match = hash.match(/^#bet\/(\d+)$/);
+  const match = hash.match(/^#bet\/(\d+)(\?.*)?$/);
   if (match) {
     const betId = parseInt(match[1]);
+    // Parse challenge code from hash params
+    const params = new URLSearchParams(match[2] ? match[2].substring(1) : '');
+    if (params.get('challenge')) {
+      activeChallengeCode = params.get('challenge');
+    }
     if (allBets.length > 0) {
       showDetailView(betId);
     } else {
@@ -2166,6 +2287,72 @@ function renderPlayersList() {
       </div>
     `;
   }).join('');
+}
+
+// ═══ CHALLENGE SYSTEM ═══
+
+async function challengeFriend() {
+  if (!currentUser) {
+    showToast('Sign in to challenge a friend');
+    return;
+  }
+  if (!detailBetId) return;
+
+  const bet = allBets.find(b => b.id === detailBetId);
+  if (!bet) return;
+
+  const myPick = myBetsMap[bet.id] || null;
+
+  // Disable button while processing
+  const btn = document.getElementById('btnChallenge');
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = '⏳ Creating challenge...';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch('/api/challenges', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ betId: bet.id, side: myPick })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showToast(data.error || 'Failed to create challenge');
+      return;
+    }
+
+    // Copy share text to clipboard
+    await navigator.clipboard.writeText(data.shareText);
+
+    // Show challenge toast
+    const toast = document.getElementById('challengeToast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 4000);
+
+  } catch (e) {
+    showToast('Failed to create challenge');
+  } finally {
+    btn.innerHTML = origHTML;
+    btn.disabled = false;
+  }
+}
+
+async function loadChallengeInfo(code) {
+  try {
+    const resp = await fetch(`/api/challenges?code=${encodeURIComponent(code)}`, { credentials: 'include' });
+    const data = await resp.json();
+    if (resp.ok && data.challenge) {
+      const ch = data.challenge;
+      document.getElementById('challengeSenderName').textContent = ch.senderName;
+      const sideText = ch.senderSide
+        ? `They bet ${ch.senderSide.toUpperCase()} — pick your side!`
+        : 'Pick a side and prove them wrong!';
+      document.getElementById('challengeSideText').textContent = sideText;
+    }
+  } catch (e) {
+    console.log('Challenge info load failed:', e);
+  }
 }
 
 // Close modals on Escape
@@ -2344,7 +2531,7 @@ async function placeBet() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ betId: bet.id, side })
+      body: JSON.stringify({ betId: bet.id, side, challengeCode: activeChallengeCode || undefined })
     });
     const data = await res.json();
 
@@ -2352,6 +2539,12 @@ async function placeBet() {
       showToast(data.error || 'Failed to place bet');
       pendingBet = null;
       return;
+    }
+
+    // If rival was created via challenge, show special toast
+    if (data.rivalCreated) {
+      showToast('⚔️ Challenge accepted! You\'re now rivals!');
+      activeChallengeCode = null; // Clear after claiming
     }
 
     // Update local state
