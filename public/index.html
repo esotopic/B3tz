@@ -1092,17 +1092,27 @@ header {
   border-top: 1px solid var(--border);
 }
 
-.card-footer .volume {
+.card-footer .card-challenge-inline {
   font-size: 12px;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  color: rgba(255,107,0,0.85);
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(255,107,0,0.1);
+  border: 1px solid rgba(255,107,0,0.25);
+  transition: all 0.2s;
+  font-weight: 600;
+}
+.card-footer .card-challenge-inline:hover {
+  background: rgba(255,107,0,0.22);
+  border-color: rgba(255,107,0,0.5);
+  color: #ff6b00;
 }
 
-.card-footer .bettors {
-  font-size: 12px;
-  color: var(--text-muted);
+.card-footer .bettors-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 /* ═══ SIGN-IN MODAL ═══ */
@@ -2032,29 +2042,7 @@ footer .footer-text {
 .btn-explore:hover { background: var(--card-hover); }
 
 /* Challenge icon on bet cards */
-.card-challenge-icon {
-  position: absolute;
-  bottom: 8px;
-  right: 10px;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(255,107,0,0.12);
-  border: 1.5px solid rgba(255,107,0,0.35);
-  cursor: pointer;
-  transition: all 0.2s;
-  z-index: 2;
-  font-size: 15px;
-}
-.card-challenge-icon:hover {
-  background: rgba(255,107,0,0.25);
-  border-color: rgba(255,107,0,0.7);
-  transform: scale(1.15);
-  box-shadow: 0 0 12px rgba(255,107,0,0.3);
-}
+/* card-challenge-icon styles moved inline to card-challenge-inline */
 
 /* Challenge banner */
 .challenge-banner {
@@ -2820,13 +2808,9 @@ function renderBetCard(bet) {
       </button>
     </div>
     <div class="card-footer">
-      <span class="volume">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-        ${formatVolume(bet.volume)} vol
-      </span>
-      <span class="bettors">${(bet.yes_count + bet.no_count).toLocaleString()} bets</span>
+      ${!isResolved ? `<span class="card-challenge-inline" title="Challenge a friend" onclick="event.stopPropagation(); openExpandedCard(${bet.id}); setTimeout(() => { const cb = document.getElementById('btnChallenge'); if(cb) cb.click(); }, 300);">⚔️ Challenge</span>` : '<span></span>'}
+      <span class="bettors-count">👥 ${(bet.yes_count + bet.no_count).toLocaleString()} bets</span>
     </div>
-    ${!isResolved ? `<div class="card-challenge-icon" title="Challenge a friend on this bet" onclick="event.stopPropagation(); openExpandedCard(${bet.id}); setTimeout(() => { const cb = document.getElementById('btnChallenge'); if(cb) cb.click(); }, 300);">⚔️</div>` : ''}
   </div>`;
 }
 
