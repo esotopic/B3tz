@@ -1219,16 +1219,17 @@ footer .footer-text {
 .bet-card.resolved .bet-actions { pointer-events: none; opacity: 0.5; }
 
 /* ═══ MY BET VISUAL CUES ═══ */
-.bet-card.my-bet-yes {
-  border-color: rgba(0,230,118,0.3);
-  box-shadow: inset 0 0 0 1px rgba(0,230,118,0.08), 0 0 20px rgba(0,230,118,0.06);
-}
+.bet-card.my-bet-yes,
 .bet-card.my-bet-no {
-  border-color: rgba(255,82,82,0.3);
-  box-shadow: inset 0 0 0 1px rgba(255,82,82,0.08), 0 0 20px rgba(255,82,82,0.06);
+  background: rgba(180,180,190,0.10);
+  border-color: rgba(180,180,190,0.25);
 }
-.bet-card.my-bet-yes:hover { border-color: rgba(0,230,118,0.45); box-shadow: 0 8px 40px rgba(0,230,118,0.12); }
-.bet-card.my-bet-no:hover { border-color: rgba(255,82,82,0.45); box-shadow: 0 8px 40px rgba(217,119,6,0.12); }
+.bet-card.my-bet-yes:hover,
+.bet-card.my-bet-no:hover {
+  background: rgba(180,180,190,0.14);
+  border-color: rgba(180,180,190,0.35);
+  box-shadow: 0 8px 40px rgba(180,180,190,0.08);
+}
 
 .my-pick-badge {
   display: inline-flex;

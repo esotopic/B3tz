@@ -1001,7 +1001,15 @@ async function handleRequest(req, res) {
   if (pathname === '/api/me' && req.method === 'GET') {
     const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
     if (!user) return sendJSON(res, 401, { user: null });
-    return sendJSON(res, 200, { user });
+    // Normalize to camelCase (DB returns PascalCase)
+    const normalized = {
+      id: user.Id || user.id,
+      username: user.Username || user.username,
+      email: user.Email || user.email,
+      displayName: user.DisplayName || user.displayName || user.Username || user.username,
+      lastLoginDate: user.LastLoginDate || user.lastLoginDate || null
+    };
+    return sendJSON(res, 200, { user: normalized });
   }
 
   // ── API: Logout ──
