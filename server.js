@@ -407,13 +407,23 @@ Be vigilant about EVASION TRICKS:
 - "Will [celebrity] die" type bets — these are inappropriate even if technically verifiable
 
 EVENT TIMING RULES (CRITICAL):
-You must determine whether the event the user is betting on has ALREADY STARTED or not.
-- If the event is in the FUTURE or is scheduled for today but has NOT YET STARTED → ALLOW the bet. Same-day bets are perfectly fine as long as the event hasn't begun.
-- If the event is CURRENTLY IN PROGRESS (e.g., a game that kicked off already, a race that started) → REJECT with reason explaining the event appears to be underway.
-- If the event has ALREADY HAPPENED and the outcome is known → REJECT with reason explaining it already happened.
-- Use your knowledge of typical event schedules. For example, if someone bets on a basketball game "today" and it's a common tipoff time, reason about whether it's likely started yet based on the current UTC time.
-- When in doubt about whether an event has started, ALLOW the bet — give the user the benefit of the doubt. Only reject if you're fairly confident it's already underway or finished.
-- For events with no specific start time (like "Bitcoin hits $200K"), always allow them as long as the outcome isn't already known.
+Same-day bets are EXTREMELY COMMON and should almost always be ALLOWED. Users frequently bet on games happening today — this is normal and expected behavior.
+
+ALLOW the bet if:
+- The event is in the future (tomorrow or later)
+- The event is TODAY and you are not nearly certain it has already FINISHED and the outcome is publicly known
+- The event has no specific start time (like "Bitcoin hits $200K") and the outcome isn't already known
+
+REJECT the bet ONLY if:
+- You are nearly certain the event has ALREADY FINISHED and the outcome is known (e.g., the game ended hours ago and the score is public)
+- The event happened days/weeks/months ago
+
+IMPORTANT — DO NOT reject same-day events just because they MIGHT have started. Most users betting on "today" games are betting BEFORE the game starts. Sports in the US typically happen in the evening US time (which is late night UTC, 11PM-4AM UTC). At any UTC time before ~11PM, most US sporting events have NOT started yet. Be very generous here.
+
+For example: "Duke beats UConn today" at 6PM UTC → this is almost certainly BEFORE tipoff. ALLOW IT.
+For example: "Lakers beat Celtics today" at 3AM UTC → the game likely finished. Check if outcome is known before rejecting.
+
+When in doubt, ALWAYS ALLOW. It is far better to let a bet through than to block a legitimate same-day bet. The platform will handle in-progress events separately.
 
 Rules for VALID bets:
 1. The bet MUST be about an event with an objectively verifiable yes/no outcome.
@@ -469,15 +479,19 @@ Current UTC time: ${currentTime}
 
 Given the bet title and event date below, determine if someone should still be allowed to place a bet on this event.
 
+IMPORTANT: Same-day bets are extremely common and should almost always be ALLOWED.
+
 Rules:
-- If the event is in the FUTURE or scheduled for today but has NOT YET STARTED → respond {"allowed":true}
-- If the event is CURRENTLY IN PROGRESS → respond {"allowed":false,"reason":"This event appears to already be underway. Betting is closed once an event starts."}
-- If the event has ALREADY HAPPENED → respond {"allowed":false,"reason":"This event has already concluded. Betting is no longer available."}
-- Use your knowledge of typical event schedules (sports tipoff times, race start times, etc.) to reason about whether the event has likely started.
-- When in doubt, ALLOW the bet — give the user the benefit of the doubt.
+- ALLOW if the event is today and you are NOT nearly certain it has already FINISHED with a known outcome
+- ALLOW if the event date is today or in the future — do NOT reject just because an event MIGHT be in progress
+- REJECT ONLY if you are nearly certain the event has ALREADY FINISHED and the outcome is publicly known (e.g., the game ended hours ago)
+- REJECT if the event happened days/weeks/months ago and the outcome is known
+- US sports typically happen in evening US time (11PM-4AM UTC). Before ~11PM UTC, most US sporting events have NOT started.
+- When in doubt, ALWAYS ALLOW. It is far better to let a bet through than to wrongly block it.
 - For open-ended bets with no specific start time (like "Bitcoin hits $200K"), always allow.
 
-Respond with ONLY a JSON object, no markdown.`;
+Respond with ONLY a JSON object: {"allowed":true} or {"allowed":false,"reason":"..."}
+No markdown.`;
 
   try {
     const response = await callClaudeAPI(
