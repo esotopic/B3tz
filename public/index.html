@@ -348,13 +348,98 @@ header {
   box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
-/* ═══ AVATAR ROW (placeholder for Phase 4) ═══ */
+/* ═══ AVATAR ROW (Phase 4) ═══ */
 .avatar-row {
   max-width: 1360px;
   margin: 0 auto;
   padding: 0 24px 16px;
   display: none;
 }
+.avatar-row.visible { display: block; }
+.avatar-row-inner {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: none;
+}
+.avatar-row-inner::-webkit-scrollbar { display: none; }
+.avatar-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 40px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.avatar-chip:hover { border-color: var(--border-hover); background: var(--card-hover); }
+.avatar-chip.nemesis-chip { border-color: rgba(255,64,129,0.3); background: rgba(255,64,129,0.06); }
+.avatar-chip.nemesis-chip:hover { border-color: rgba(255,64,129,0.5); }
+.avatar-chip-img {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px;
+  background: rgba(124,77,255,0.15); color: var(--accent);
+}
+.nemesis-chip .avatar-chip-img { background: rgba(255,64,129,0.15); color: #ff4081; }
+.avatar-chip-info { display: flex; flex-direction: column; }
+.avatar-chip-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.avatar-chip-stat { font-size: 11px; color: var(--text-muted); }
+.avatar-chip-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+.badge-nemesis { background: rgba(255,64,129,0.12); color: #ff4081; }
+.badge-rival { background: rgba(124,77,255,0.12); color: var(--accent); }
+
+/* H2H Modal */
+.h2h-modal-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  max-width: 480px;
+  width: 95%;
+  padding: 28px;
+  position: relative;
+}
+.h2h-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.h2h-vs { font-size: 24px; color: var(--text-muted); font-weight: 800; }
+.h2h-user { text-align: center; }
+.h2h-user-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700;
+  margin: 0 auto 6px;
+}
+.h2h-user-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.h2h-stat-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.h2h-stat-row:last-child { border-bottom: none; }
+.h2h-stat-label { font-size: 13px; color: var(--text-dim); }
+.h2h-stat-value { font-size: 14px; font-weight: 600; color: var(--text); }
+.h2h-bet-list { max-height: 200px; overflow-y: auto; margin-top: 12px; }
+.h2h-bet-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.h2h-bet-title { color: var(--text-dim); flex: 1; margin-right: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h2h-sides { display: flex; gap: 6px; }
+.h2h-side { padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; }
+.h2h-side.yes { background: var(--yes-bg); color: var(--yes); }
+.h2h-side.no { background: var(--no-bg); color: var(--no); }
 
 /* ═══ OLD .categories compat ═══ */
 .categories { display: none; }
@@ -1279,6 +1364,7 @@ footer .footer-text {
   transition: all 0.2s;
 }
 .btn-mark-rival:hover { border-color: var(--accent); color: var(--accent); background: rgba(124,77,255,0.08); }
+.btn-mark-rival.active { border-color: var(--accent); color: var(--accent); background: rgba(124,77,255,0.1); }
 .no-players {
   text-align: center;
   padding: 32px;
@@ -1494,8 +1580,10 @@ footer .footer-text {
   <span class="bet-count" id="betCount"></span>
 </div>
 
-<!-- Avatar row placeholder (Phase 4) -->
-<div class="avatar-row" id="avatarRow"></div>
+<!-- Avatar row (Phase 4) -->
+<div class="avatar-row" id="avatarRow">
+  <div class="avatar-row-inner" id="avatarRowInner"></div>
+</div>
 
 <section class="bets-section">
   <div class="section-header" style="display:none;">
@@ -1703,6 +1791,14 @@ footer .footer-text {
   <div class="challenge-toast-sub">Paste it into iMessage, WhatsApp, Telegram, Twitter, email — anywhere you want to dare someone.</div>
 </div>
 
+<!-- H2H Modal -->
+<div class="modal-overlay" id="h2hModal" onclick="if(event.target===this)closeModals()">
+  <div class="h2h-modal-content">
+    <button onclick="closeModals()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:20px;">&times;</button>
+    <div id="h2hContent">Loading...</div>
+  </div>
+</div>
+
 <script>
 let allBets = [];
 let activeCategory = 'All';
@@ -1710,6 +1806,7 @@ let pendingBet = null;
 let selectedPosition = 'yes';
 let currentUser = null;
 let myBetsMap = {}; // { betId: 'yes'|'no' }
+let myRivals = []; // loaded from /api/rivals
 let viewMode = 'all'; // 'all', 'nemesis', 'rivals'
 let involvement = 'everyone'; // 'everyone', 'myplays', 'created'
 
@@ -1784,8 +1881,10 @@ async function doLogin() {
     document.getElementById('loginInput').value = '';
     document.getElementById('loginPassword').value = '';
     errorEl.style.display = 'none';
-    await loadMyBets();
+    await Promise.all([loadMyBets(), loadRivals()]);
     updateViewFiltersVisibility();
+    renderAvatarRow();
+    renderFilterRow();
     renderBets();
   } catch (e) {
     errorEl.textContent = 'Network error. Please try again.';
@@ -1833,8 +1932,10 @@ async function doRegister() {
     document.getElementById('regUsername').value = '';
     document.getElementById('regPassword').value = '';
     errorEl.style.display = 'none';
-    await loadMyBets();
+    await Promise.all([loadMyBets(), loadRivals()]);
     updateViewFiltersVisibility();
+    renderAvatarRow();
+    renderFilterRow();
     renderBets();
   } catch (e) {
     errorEl.textContent = 'Network error. Please try again.';
@@ -1904,8 +2005,10 @@ async function checkAuth() {
     if (data.user) {
       currentUser = data.user;
       updateNavUI();
-      await loadMyBets();
+      await Promise.all([loadMyBets(), loadRivals()]);
       updateViewFiltersVisibility();
+      renderAvatarRow();
+      renderFilterRow();
       renderBets(); // re-render with my bet cues
     }
   } catch (e) { /* not logged in */ }
@@ -1970,11 +2073,19 @@ function renderBets() {
 
   // Dimension 1: Main tab (who)
   if (viewMode === 'nemesis') {
-    // Phase 3+: filter to nemesis bets. For now show empty state.
-    filtered = [];
+    // Filter to bets where a nemesis (mutual rival) also placed a bet
+    const nemIds = new Set(myRivals.filter(r => r.isMutual).map(r => r.id));
+    filtered = filtered.filter(b => {
+      // Include bets where current user has a bet AND a nemesis might also bet
+      // For now, include all bets if user has nemeses — we'll refine with voter data
+      return myBetsMap[b.id] && nemIds.size > 0;
+    });
   } else if (viewMode === 'rivals') {
-    // Phase 3+: filter to rival bets. For now show empty state.
-    filtered = [];
+    // Filter to bets where user has placed a bet (rival context)
+    const rivIds = new Set(myRivals.map(r => r.id));
+    filtered = filtered.filter(b => {
+      return myBetsMap[b.id] && rivIds.size > 0;
+    });
   }
 
   // Dimension 2: Involvement (my role)
@@ -2276,12 +2387,18 @@ function renderPlayersList() {
   listEl.innerHTML = voters.map(v => {
     const isYou = currentUser && v.id === currentUser.id;
     const initial = (v.displayName || v.username || '?')[0].toUpperCase();
-    const rivalBtn = (!isYou && currentUser) ? `<button class="btn-mark-rival" onclick="event.stopPropagation();" title="Coming in Phase 3">🎯 Rival</button>` : '';
+    const isRiv = isRival(v.id);
+    const isNem = isNemesis(v.id);
+    const rivalLabel = isNem ? '🔥 Nemesis' : isRiv ? '✓ Rival' : '🎯 Rival';
+    const rivalBtn = (!isYou && currentUser)
+      ? `<button class="btn-mark-rival${isRiv ? ' active' : ''}" onclick="event.stopPropagation();toggleRival(${v.id},'${(v.displayName || v.username).replace(/'/g, "\\'")}')" title="${isRiv ? 'Remove rival' : 'Mark as rival'}">${rivalLabel}</button>`
+      : '';
+    const nemBadge = isNem ? '<span class="player-badge rival" style="background:rgba(255,64,129,0.12);color:#ff4081;">NEMESIS</span>' : isRiv ? '<span class="player-badge rival">RIVAL</span>' : '';
     return `
-      <div class="player-row">
+      <div class="player-row" ${(!isYou && currentUser) ? `style="cursor:pointer" onclick="openH2H(${v.id})"` : ''}>
         <div class="player-avatar ${side}-avatar">${initial}</div>
         <div class="player-info">
-          <div class="player-name">${v.displayName || v.username}</div>
+          <div class="player-name">${v.displayName || v.username} ${nemBadge}</div>
         </div>
         ${isYou ? `<span class="player-badge you-${side}">YOU</span>` : rivalBtn}
       </div>
@@ -2397,9 +2514,139 @@ function resetFilters() {
   renderBets();
 }
 
-// Placeholder functions for Phase 3+
-function hasNemeses() { return false; }
-function hasRivals() { return false; }
+// ══════════════════════════════
+// ── RIVALS & NEMESIS (Phase 4 & 5) ──
+// ══════════════════════════════
+
+function hasNemeses() { return myRivals.some(r => r.isMutual); }
+function hasRivals() { return myRivals.length > 0; }
+function isRival(userId) { return myRivals.some(r => r.id === userId); }
+function isNemesis(userId) { return myRivals.some(r => r.id === userId && r.isMutual); }
+
+async function loadRivals() {
+  if (!currentUser) { myRivals = []; return; }
+  try {
+    const res = await fetch('/api/rivals', { credentials: 'include' });
+    const data = await res.json();
+    if (data.rivals) myRivals = data.rivals;
+  } catch (e) { /* ignore */ }
+}
+
+async function toggleRival(rivalUserId, displayName) {
+  if (!currentUser) { openLoginModal(); return; }
+  try {
+    const res = await fetch('/api/rivals/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ rivalUserId })
+    });
+    const data = await res.json();
+    if (data.action === 'added') {
+      myRivals.push({ id: rivalUserId, displayName, isMutual: data.isMutual });
+      if (data.isMutual) {
+        showToast(`🔥 ${displayName} is now your NEMESIS! The rivalry is mutual.`);
+      } else {
+        showToast(`🎯 ${displayName} marked as rival!`);
+      }
+    } else if (data.action === 'removed') {
+      myRivals = myRivals.filter(r => r.id !== rivalUserId);
+      showToast(`Removed ${displayName} from rivals`);
+    }
+    renderAvatarRow();
+    if (detailBetId) renderPlayersList();
+  } catch (e) {
+    showToast('Failed to update rival');
+  }
+}
+
+function renderAvatarRow() {
+  const container = document.getElementById('avatarRow');
+  const inner = document.getElementById('avatarRowInner');
+  if (!currentUser || myRivals.length === 0) {
+    container.classList.remove('visible');
+    return;
+  }
+  container.classList.add('visible');
+
+  // Sort: nemeses first, then rivals
+  const sorted = [...myRivals].sort((a, b) => {
+    if (a.isMutual && !b.isMutual) return -1;
+    if (!a.isMutual && b.isMutual) return 1;
+    return 0;
+  });
+
+  inner.innerHTML = sorted.map(r => {
+    const initial = (r.displayName || r.username || '?')[0].toUpperCase();
+    const isNem = r.isMutual;
+    const chipClass = isNem ? 'avatar-chip nemesis-chip' : 'avatar-chip';
+    const badge = isNem
+      ? '<span class="avatar-chip-badge badge-nemesis">NEMESIS</span>'
+      : '<span class="avatar-chip-badge badge-rival">RIVAL</span>';
+    return `
+      <div class="${chipClass}" onclick="openH2H(${r.id})">
+        <div class="avatar-chip-img">${initial}</div>
+        <div class="avatar-chip-info">
+          <div class="avatar-chip-name">${r.displayName || r.username}${badge}</div>
+          <div class="avatar-chip-stat">${isNem ? 'Mutual rivalry' : 'One-sided (for now)'}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function openH2H(rivalId) {
+  document.getElementById('h2hContent').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dim)">Loading head-to-head...</div>';
+  document.getElementById('h2hModal').classList.add('active');
+
+  try {
+    const res = await fetch(`/api/h2h/${rivalId}`, { credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    const r = data.rival;
+    const s = data.stats;
+    const myInitial = (currentUser.displayName || currentUser.username || '?')[0].toUpperCase();
+    const theirInitial = (r.displayName || r.username || '?')[0].toUpperCase();
+    const isNem = isNemesis(rivalId);
+
+    let betsHtml = '';
+    if (data.bets.length > 0) {
+      betsHtml = '<div class="h2h-bet-list">' + data.bets.slice(0, 10).map(b => `
+        <div class="h2h-bet-item">
+          <span class="h2h-bet-title">${b.icon} ${b.title}</span>
+          <div class="h2h-sides">
+            <span class="h2h-side ${b.mySide}">You: ${b.mySide.toUpperCase()}</span>
+            <span class="h2h-side ${b.theirSide}">${theirInitial}: ${b.theirSide.toUpperCase()}</span>
+          </div>
+        </div>
+      `).join('') + '</div>';
+    }
+
+    document.getElementById('h2hContent').innerHTML = `
+      <div class="h2h-header">
+        <div class="h2h-user">
+          <div class="h2h-user-avatar" style="background:rgba(124,77,255,0.15);color:var(--accent);">${myInitial}</div>
+          <div class="h2h-user-name">You</div>
+        </div>
+        <div class="h2h-vs">${isNem ? '🔥' : '⚔️'} VS</div>
+        <div class="h2h-user">
+          <div class="h2h-user-avatar" style="background:${isNem ? 'rgba(255,64,129,0.15);color:#ff4081' : 'rgba(124,77,255,0.15);color:var(--accent)'};">${theirInitial}</div>
+          <div class="h2h-user-name">${r.displayName || r.username}</div>
+        </div>
+      </div>
+      <div class="h2h-stat-row"><span class="h2h-stat-label">Status</span><span class="h2h-stat-value">${isNem ? '🔥 NEMESIS' : '🎯 Rival'}</span></div>
+      <div class="h2h-stat-row"><span class="h2h-stat-label">Shared bets</span><span class="h2h-stat-value">${s.sharedBets}</span></div>
+      <div class="h2h-stat-row"><span class="h2h-stat-label">Opposing picks</span><span class="h2h-stat-value">${s.opposing}</span></div>
+      <div class="h2h-stat-row"><span class="h2h-stat-label">Your wins</span><span class="h2h-stat-value" style="color:var(--yes)">${s.myWins}</span></div>
+      <div class="h2h-stat-row"><span class="h2h-stat-label">Their wins</span><span class="h2h-stat-value" style="color:var(--no)">${s.theirWins}</span></div>
+      <div class="h2h-stat-row"><span class="h2h-stat-label">Ties</span><span class="h2h-stat-value">${s.ties}</span></div>
+      ${betsHtml}
+    `;
+  } catch (e) {
+    document.getElementById('h2hContent').innerHTML = '<div style="text-align:center;padding:20px;color:var(--no)">Failed to load head-to-head stats</div>';
+  }
+}
 
 function getNemesisEmptyState() {
   return `<div class="empty-feature">
@@ -2507,8 +2754,10 @@ async function placeBetFromSignIn() {
     }
     currentUser = data.user;
     updateNavUI();
-    await loadMyBets();
+    await Promise.all([loadMyBets(), loadRivals()]);
     updateViewFiltersVisibility();
+    renderAvatarRow();
+    renderFilterRow();
     // Clear inputs
     document.querySelector('#signInModal .modal-input[type="text"]').value = '';
     document.querySelector('#signInModal .modal-input[type="password"]').value = '';
@@ -2541,10 +2790,13 @@ async function placeBet() {
       return;
     }
 
-    // If rival was created via challenge, show special toast
+    // If rival was created via challenge, show special toast and refresh rivals
     if (data.rivalCreated) {
       showToast('⚔️ Challenge accepted! You\'re now rivals!');
       activeChallengeCode = null; // Clear after claiming
+      await loadRivals();
+      renderAvatarRow();
+      renderFilterRow();
     }
 
     // Update local state

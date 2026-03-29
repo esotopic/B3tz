@@ -1075,6 +1075,168 @@ async function handleRequest(req, res) {
     return;
   }
 
+  // ══════════════════════════════════════
+  // ── API: Get My Rivals ──
+  // ══════════════════════════════════════
+
+  if (pathname === '/api/rivals' && req.method === 'GET') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in' });
+    const userId = user.Id || user.id;
+
+    if (dbPool) {
+      try {
+        const result = await dbPool.request()
+          .input('userId', sql.Int, userId)
+          .query(`
+            SELECT r.RivalUserId, r.Source, r.CreatedDate,
+                   u.Username, u.DisplayName,
+                   CASE WHEN r2.Id IS NOT NULL THEN 1 ELSE 0 END AS IsMutual
+            FROM B3tz_Rivals r
+            JOIN B3tz_Users u ON u.Id = r.RivalUserId
+            LEFT JOIN B3tz_Rivals r2 ON r2.UserId = r.RivalUserId AND r2.RivalUserId = r.UserId
+            WHERE r.UserId = @userId
+            ORDER BY r.CreatedDate DESC
+          `);
+        const rivals = result.recordset.map(r => ({
+          id: r.RivalUserId,
+          username: r.Username,
+          displayName: r.DisplayName || r.Username,
+          source: r.Source,
+          isMutual: !!r.IsMutual,
+          createdDate: r.CreatedDate
+        }));
+        return sendJSON(res, 200, { rivals });
+      } catch (e) {
+        console.error('Rivals error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to load rivals' });
+      }
+    } else {
+      return sendJSON(res, 200, { rivals: [] });
+    }
+  }
+
+  // ══════════════════════════════════════
+  // ── API: Mark/Unmark Rival ──
+  // ══════════════════════════════════════
+
+  if (pathname === '/api/rivals/toggle' && req.method === 'POST') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in' });
+    const userId = user.Id || user.id;
+    const body = await parseBody(req);
+    const { rivalUserId } = body;
+
+    if (!rivalUserId || rivalUserId === userId) {
+      return sendJSON(res, 400, { error: 'Invalid rival' });
+    }
+
+    if (dbPool) {
+      try {
+        // Check if already a rival
+        const existing = await dbPool.request()
+          .input('userId', sql.Int, userId)
+          .input('rivalId', sql.Int, rivalUserId)
+          .query('SELECT Id FROM B3tz_Rivals WHERE UserId = @userId AND RivalUserId = @rivalId');
+
+        if (existing.recordset.length > 0) {
+          // Remove rival
+          await dbPool.request()
+            .input('userId', sql.Int, userId)
+            .input('rivalId', sql.Int, rivalUserId)
+            .query('DELETE FROM B3tz_Rivals WHERE UserId = @userId AND RivalUserId = @rivalId');
+          return sendJSON(res, 200, { action: 'removed', rivalUserId });
+        } else {
+          // Add rival
+          await dbPool.request()
+            .input('userId', sql.Int, userId)
+            .input('rivalId', sql.Int, rivalUserId)
+            .query("INSERT INTO B3tz_Rivals (UserId, RivalUserId, Source) VALUES (@userId, @rivalId, 'manual')");
+
+          // Check if mutual
+          const mutual = await dbPool.request()
+            .input('userId', sql.Int, userId)
+            .input('rivalId', sql.Int, rivalUserId)
+            .query('SELECT Id FROM B3tz_Rivals WHERE UserId = @rivalId AND RivalUserId = @userId');
+
+          return sendJSON(res, 200, { action: 'added', rivalUserId, isMutual: mutual.recordset.length > 0 });
+        }
+      } catch (e) {
+        console.error('Toggle rival error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to toggle rival' });
+      }
+    } else {
+      return sendJSON(res, 200, { action: 'added', rivalUserId, isMutual: false });
+    }
+  }
+
+  // ══════════════════════════════════════
+  // ── API: Head-to-Head Stats ──
+  // ══════════════════════════════════════
+
+  const h2hMatch = pathname.match(/^\/api\/h2h\/(\d+)$/);
+  if (h2hMatch && req.method === 'GET') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in' });
+    const userId = user.Id || user.id;
+    const rivalId = parseInt(h2hMatch[1]);
+
+    if (dbPool) {
+      try {
+        // Get rival info
+        const rivalInfo = await dbPool.request()
+          .input('rivalId', sql.Int, rivalId)
+          .query('SELECT Username, DisplayName FROM B3tz_Users WHERE Id = @rivalId');
+        if (rivalInfo.recordset.length === 0) return sendJSON(res, 404, { error: 'User not found' });
+        const rival = rivalInfo.recordset[0];
+
+        // Get all bets both users have bet on
+        const shared = await dbPool.request()
+          .input('u1', sql.Int, userId)
+          .input('u2', sql.Int, rivalId)
+          .query(`
+            SELECT ub1.BetId, ub1.Side AS MySide, ub2.Side AS TheirSide,
+                   b.Title, b.Icon, b.Status, b.Resolution, b.YesOdds, b.NoOdds
+            FROM B3tz_UserBets ub1
+            JOIN B3tz_UserBets ub2 ON ub1.BetId = ub2.BetId AND ub2.UserId = @u2
+            JOIN B3tz_Bets b ON b.Id = ub1.BetId
+            WHERE ub1.UserId = @u1
+            ORDER BY b.CreatedDate DESC
+          `);
+
+        let myWins = 0, theirWins = 0, ties = 0, opposing = 0;
+        const sharedBets = shared.recordset.map(r => {
+          const sameSide = r.MySide === r.TheirSide;
+          if (!sameSide) opposing++;
+          if (r.Status === 'resolved' && r.Resolution) {
+            const iWon = r.MySide === r.Resolution;
+            const theyWon = r.TheirSide === r.Resolution;
+            if (iWon && !theyWon) myWins++;
+            else if (theyWon && !iWon) theirWins++;
+            else ties++;
+          }
+          return {
+            betId: r.BetId, title: r.Title, icon: r.Icon,
+            mySide: r.MySide, theirSide: r.TheirSide,
+            status: r.Status, resolution: r.Resolution,
+            sameSide
+          };
+        });
+
+        return sendJSON(res, 200, {
+          rival: { id: rivalId, username: rival.Username, displayName: rival.DisplayName || rival.Username },
+          stats: { sharedBets: sharedBets.length, opposing, myWins, theirWins, ties },
+          bets: sharedBets
+        });
+      } catch (e) {
+        console.error('H2H error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to load head-to-head' });
+      }
+    } else {
+      return sendJSON(res, 200, { rival: {}, stats: { sharedBets: 0, opposing: 0, myWins: 0, theirWins: 0, ties: 0 }, bets: [] });
+    }
+  }
+
   // ══════════════════════════════════
   // ── API: AI Bet Validation ──
   // ══════════════════════════════════
