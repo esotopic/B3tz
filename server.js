@@ -380,11 +380,16 @@ async function validateBetWithAI(userInput) {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
   const currentTime = now.toISOString();
+  const etTime = now.toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true });
+  const ctTime = now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit', hour12: true });
+  const mtTime = now.toLocaleString('en-US', { timeZone: 'America/Denver', hour: 'numeric', minute: '2-digit', hour12: true });
+  const ptTime = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', minute: '2-digit', hour12: true });
 
   const systemPrompt = `You are the B3tz bet validator. Your job is to take a user's natural language bet and turn it into a structured, verifiable bet.
 
 Today's date: ${today}
 Current UTC time: ${currentTime}
+Current US times: Eastern: ${etTime} | Central: ${ctTime} | Mountain: ${mtTime} | Pacific: ${ptTime}
 
 CONTENT POLICY (HIGHEST PRIORITY — enforce before anything else):
 This is a FAMILY-FRIENDLY platform. You MUST reject any bet that contains or implies:
@@ -407,23 +412,30 @@ Be vigilant about EVASION TRICKS:
 - "Will [celebrity] die" type bets — these are inappropriate even if technically verifiable
 
 EVENT TIMING RULES (CRITICAL):
-Same-day bets are EXTREMELY COMMON and should almost always be ALLOWED. Users frequently bet on games happening today — this is normal and expected behavior.
+Same-day bets are EXTREMELY COMMON. You have the exact current time in all US timezones above — USE IT to make precise decisions.
+
+Your job: figure out the ACTUAL scheduled start time of the event, compare it to the current time, and decide.
 
 ALLOW the bet if:
-- The event is in the future (tomorrow or later)
-- The event is TODAY and you are not nearly certain it has already FINISHED and the outcome is publicly known
+- The event is tomorrow or later
+- The event is TODAY and has NOT YET STARTED (current time is BEFORE the event's scheduled start time)
 - The event has no specific start time (like "Bitcoin hits $200K") and the outcome isn't already known
+- You cannot determine the exact start time — when in doubt, ALLOW
 
 REJECT the bet ONLY if:
-- You are nearly certain the event has ALREADY FINISHED and the outcome is known (e.g., the game ended hours ago and the score is public)
-- The event happened days/weeks/months ago
+- The current time is AFTER the event's scheduled start time (the event is in progress or finished)
+- The event happened on a previous day and the outcome is known
 
-IMPORTANT — DO NOT reject same-day events just because they MIGHT have started. Most users betting on "today" games are betting BEFORE the game starts. Sports in the US typically happen in the evening US time (which is late night UTC, 11PM-4AM UTC). At any UTC time before ~11PM, most US sporting events have NOT started yet. Be very generous here.
+HOW TO DETERMINE START TIMES:
+- Use your knowledge of sports schedules. For example, NCAA March Madness games have specific tipoff times (e.g., 2:20 PM ET, 5:05 PM ET, 6:09 PM ET, 8:49 PM ET). NFL games are typically 1 PM ET, 4:25 PM ET, or 8:20 PM ET on Sundays.
+- Compare the event's start time to the CURRENT US time shown above.
+- If you know the specific start time, compare precisely. A game starting at 2:05 PM PT should be allowed at 2:04 PM PT but rejected at 2:06 PM PT.
+- If you only know an approximate time range, use the LATEST reasonable start time (most generous to the user).
 
-For example: "Duke beats UConn today" at 6PM UTC → this is almost certainly BEFORE tipoff. ALLOW IT.
-For example: "Lakers beat Celtics today" at 3AM UTC → the game likely finished. Check if outcome is known before rejecting.
-
-When in doubt, ALWAYS ALLOW. It is far better to let a bet through than to block a legitimate same-day bet. The platform will handle in-progress events separately.
+EXAMPLES using current times above:
+- "Duke beats UConn today" and it's 11:50 AM PT → NCAA tipoff is likely 2 PM+ PT → ALLOW (game hasn't started)
+- "Lakers beat Celtics tonight" and it's 8 PM PT → NBA tipoff was likely 7:30 PM PT → REJECT (game likely in progress)
+- "Chiefs beat Eagles today" and it's 10 AM ET → NFL kickoff is 1 PM+ ET → ALLOW (hours before kickoff)
 
 Rules for VALID bets:
 1. The bet MUST be about an event with an objectively verifiable yes/no outcome.
@@ -462,6 +474,10 @@ Categories to choose from: F1, Soccer, Basketball, Baseball, Crypto, Tech, Scien
 async function checkBetTimingWithAI(bet) {
   const now = new Date();
   const currentTime = now.toISOString();
+  const etTime = now.toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true });
+  const ctTime = now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit', hour12: true });
+  const mtTime = now.toLocaleString('en-US', { timeZone: 'America/Denver', hour: 'numeric', minute: '2-digit', hour12: true });
+  const ptTime = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', minute: '2-digit', hour12: true });
 
   // Quick check: if event_date is well in the future (>1 day away), skip AI call
   if (bet.event_date) {
@@ -476,18 +492,19 @@ async function checkBetTimingWithAI(bet) {
   const systemPrompt = `You are a quick event timing checker for B3tz betting platform.
 
 Current UTC time: ${currentTime}
+Current US times: Eastern: ${etTime} | Central: ${ctTime} | Mountain: ${mtTime} | Pacific: ${ptTime}
 
-Given the bet title and event date below, determine if someone should still be allowed to place a bet on this event.
+Given the bet title and event date below, determine if someone should still be allowed to place a bet.
 
-IMPORTANT: Same-day bets are extremely common and should almost always be ALLOWED.
+Your job: figure out the ACTUAL scheduled start time of the event, compare it to the current time, and decide.
 
 Rules:
-- ALLOW if the event is today and you are NOT nearly certain it has already FINISHED with a known outcome
-- ALLOW if the event date is today or in the future — do NOT reject just because an event MIGHT be in progress
-- REJECT ONLY if you are nearly certain the event has ALREADY FINISHED and the outcome is publicly known (e.g., the game ended hours ago)
-- REJECT if the event happened days/weeks/months ago and the outcome is known
-- US sports typically happen in evening US time (11PM-4AM UTC). Before ~11PM UTC, most US sporting events have NOT started.
-- When in doubt, ALWAYS ALLOW. It is far better to let a bet through than to wrongly block it.
+- ALLOW if the current time is BEFORE the event's scheduled start time (event hasn't started yet)
+- ALLOW if you cannot determine the exact start time — when in doubt, ALLOW
+- REJECT if the current time is AFTER the event's start time (event is in progress or finished)
+- REJECT if the event happened on a previous day and the outcome is known
+- Use your knowledge of sports schedules to determine start times (e.g., NCAA tipoff times, NFL kickoff times, etc.)
+- Compare precisely: a game starting at 2:05 PM PT should be allowed at 2:04 PM PT but rejected at 2:06 PM PT
 - For open-ended bets with no specific start time (like "Bitcoin hits $200K"), always allow.
 
 Respond with ONLY a JSON object: {"allowed":true} or {"allowed":false,"reason":"..."}
