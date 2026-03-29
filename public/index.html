@@ -2497,27 +2497,8 @@ function getFilteredBets() {
     );
   }
 
-  // ── Smart sorting ──
-  const nemIds = new Set(myRivals.filter(r => r.isMutual).map(r => r.id));
-  const rivIds = new Set(myRivals.map(r => r.id));
-
-  function getBetPriority(b) {
-    if (!currentUser) return 2;
-    const rivals = rivalBetMap[b.id];
-    const isNemBet = rivals && rivals.some(rid => nemIds.has(rid));
-    const isRivBet = rivals && rivals.some(rid => rivIds.has(rid));
-    const iActed = !!myBetsMap[b.id];
-    if (isNemBet && !iActed) return 0;
-    if (isRivBet) return 1;
-    return 2;
-  }
-
-  filtered.sort((a, b) => {
-    const pa = getBetPriority(a);
-    const pb = getBetPriority(b);
-    if (pa !== pb) return pa - pb;
-    return eventDateToTs(a.event_date) - eventDateToTs(b.event_date);
-  });
+  // ── Sort by event date (soonest first) ──
+  filtered.sort((a, b) => eventDateToTs(a.event_date) - eventDateToTs(b.event_date));
 
   return filtered;
 }
