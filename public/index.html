@@ -802,6 +802,11 @@ header {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
+.modal-input.pw-mask {
+  -webkit-text-security: disc;
+  -moz-text-security: disc;
+  text-security: disc;
+}
 
 .modal-submit {
   width: 100%;
@@ -1710,7 +1715,7 @@ footer .footer-text {
         <div id="userDropdown" style="display:none;position:absolute;right:0;top:48px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:180px;box-shadow:0 8px 40px rgba(0,0,0,0.4);z-index:200;">
           <div style="padding:10px 12px;border-bottom:1px solid var(--border);margin-bottom:4px;">
             <div style="font-weight:600;font-size:14px;" id="dropdownName"></div>
-            <div style="font-size:12px;color:var(--text-muted);" id="dropdownEmail"></div>
+            <div style="font-size:12px;color:var(--text-muted);" id="dropdownEmail" style="display:none;"></div>
           </div>
           <button onclick="doLogout()" style="width:100%;padding:10px 12px;border:none;background:transparent;color:var(--no);font-family:Inter,sans-serif;font-size:14px;font-weight:500;text-align:left;border-radius:8px;cursor:pointer;" onmouseover="this.style.background='var(--no-bg)'" onmouseout="this.style.background='transparent'">Sign Out</button>
         </div>
@@ -1846,8 +1851,8 @@ footer .footer-text {
     <h2>Sign in to bet</h2>
     <p>You need an account to place your bet.</p>
     <div class="bet-preview" id="betPreview"></div>
-    <input type="text" class="modal-input" placeholder="Username or email" />
-    <input type="password" class="modal-input" placeholder="Password" />
+    <input type="text" class="modal-input" placeholder="Username" />
+    <input type="text" class="modal-input pw-mask" autocomplete="off" placeholder="Password" />
     <button class="modal-submit yes" id="modalBetSubmit" onclick="placeBetFromSignIn()">Sign In & Place Bet</button>
     <div class="modal-divider">or</div>
     <button class="btn-login" style="width:100%; padding:14px; border-radius:12px; font-size:15px;" onclick="closeModals()">Continue Browsing</button>
@@ -1935,16 +1940,16 @@ footer .footer-text {
     <!-- Login form -->
     <div id="loginForm">
       <p style="color:var(--text-dim);font-size:14px;margin-bottom:20px;line-height:1.5;">Sign in to create bets and track your wins.</p>
-      <input type="text" class="modal-input" id="loginInput" placeholder="Username or email" />
-      <input type="password" class="modal-input" id="loginPassword" placeholder="Password" />
+      <input type="text" class="modal-input" id="loginInput" placeholder="Username" autocomplete="off" />
+      <input type="text" class="modal-input pw-mask" autocomplete="off" id="loginPassword" placeholder="Password" />
       <div id="loginError" style="color:var(--no);font-size:13px;margin-bottom:8px;display:none;"></div>
       <button class="btn-create-submit" id="loginSubmitBtn" onclick="doLogin()">Sign In</button>
     </div>
     <!-- Register form -->
     <div id="registerForm" style="display:none;">
       <p style="color:var(--text-dim);font-size:14px;margin-bottom:20px;line-height:1.5;">Join B3tz and start placing bets.</p>
-      <input type="text" class="modal-input" id="regUsername" placeholder="Username" />
-      <input type="password" class="modal-input" id="regPassword" placeholder="Password" />
+      <input type="text" class="modal-input" id="regUsername" placeholder="Username" autocomplete="off" />
+      <input type="text" class="modal-input pw-mask" autocomplete="off" id="regPassword" placeholder="Password" />
       <div id="registerError" style="color:var(--no);font-size:13px;margin-bottom:8px;display:none;"></div>
       <button class="btn-create-submit" id="registerSubmitBtn" onclick="doRegister()">Create Account</button>
     </div>
@@ -2221,24 +2226,22 @@ function renderCategories() {
 }
 
 function renderFilterRow() {
-  const cats = ['All', ...new Set(allBets.map(b => b.category))];
+  const cats = [...new Set(allBets.map(b => b.category))];
   const row = document.getElementById('filterRow');
 
-  // Main tabs: All, Nemesis, Rivals, History
   let html = '';
-  html += `<button class="tab-pill${viewMode === 'all' ? ' active' : ''}" onclick="setMainTab('all')">🌐 All</button>`;
+
+  // Main view tabs (only when logged in): Nemesis, Rivals, History
   if (currentUser) {
     html += `<button class="tab-pill tab-nemesis${viewMode === 'nemesis' ? ' active' : ''}" onclick="setMainTab('nemesis')">🔥 Nemesis</button>`;
     html += `<button class="tab-pill tab-rivals${viewMode === 'rivals' ? ' active' : ''}" onclick="setMainTab('rivals')">🎯 Rivals</button>`;
+    html += `<button class="tab-pill${viewMode === 'history' ? ' active' : ''}" onclick="setMainTab('history')">📜 History</button>`;
+    html += `<div class="tab-divider"></div>`;
   }
-  html += `<button class="tab-pill${viewMode === 'history' ? ' active' : ''}" onclick="setMainTab('history')">📜 History</button>`;
 
-  // Divider
-  html += `<div class="tab-divider"></div>`;
-
-  // Category pills (only the dynamic ones, not "All" since the main tabs handle scope)
+  // Category pills: All + dynamic categories
+  html += `<button class="tab-pill${activeCategory === 'All' ? ' active' : ''}" onclick="filterCategory('All')">All</button>`;
   cats.forEach(c => {
-    if (c === 'All') return; // skip — All is the main tab
     html += `<button class="tab-pill${c === activeCategory ? ' active' : ''}" onclick="filterCategory('${c}')">${c}</button>`;
   });
 
@@ -2278,11 +2281,12 @@ function getFilteredBets() {
       return rivals.some(rid => nemIds.has(rid));
     });
   } else if (viewMode === 'rivals') {
-    const rivIds = new Set(myRivals.map(r => r.id));
+    // Only non-nemesis rivals (exclude mutual/nemesis users)
+    const rivOnlyIds = new Set(myRivals.filter(r => !r.isMutual).map(r => r.id));
     filtered = filtered.filter(b => {
       const rivals = rivalBetMap[b.id];
       if (!rivals) return false;
-      return rivals.some(rid => rivIds.has(rid));
+      return rivals.some(rid => rivOnlyIds.has(rid));
     });
   }
 
@@ -2783,16 +2787,16 @@ document.addEventListener('keydown', e => {
 });
 
 function filterCategory(cat) {
-  activeCategory = (activeCategory === cat) ? 'All' : cat; // toggle off if same
+  activeCategory = cat;
   resetDisplayLimit();
   renderFilterRow();
   renderBets();
 }
 
 function setMainTab(tab) {
-  if ((tab === 'nemesis' || tab === 'rivals') && !currentUser) { openLoginModal(); return; }
-  viewMode = tab;
-  activeCategory = 'All'; // reset category when switching main tab
+  if ((tab === 'nemesis' || tab === 'rivals' || tab === 'history') && !currentUser) { openLoginModal(); return; }
+  // Toggle off if clicking the same tab
+  viewMode = (viewMode === tab) ? 'all' : tab;
   resetDisplayLimit();
   renderFilterRow();
   renderBets();
@@ -3048,13 +3052,13 @@ function showInlineAuth(side) {
       </div>
       <div id="iaRegisterForm">
         <input type="text" class="modal-input" id="iaRegUsername" placeholder="Choose a username" autocomplete="off" />
-        <input type="password" class="modal-input" id="iaRegPassword" placeholder="Choose a password" />
+        <input type="text" class="modal-input pw-mask" autocomplete="off" id="iaRegPassword" placeholder="Choose a password" />
         <div class="inline-auth-error" id="iaRegError"></div>
         <button class="inline-auth-submit ${side}" id="iaRegBtn" onclick="inlineRegister('${side}')">Create Account & Bet ${sideLabel}</button>
       </div>
       <div id="iaLoginForm" style="display:none;">
-        <input type="text" class="modal-input" id="iaLoginInput" placeholder="Username or email" autocomplete="off" />
-        <input type="password" class="modal-input" id="iaLoginPassword" placeholder="Password" />
+        <input type="text" class="modal-input" id="iaLoginInput" placeholder="Username" autocomplete="off" />
+        <input type="text" class="modal-input pw-mask" autocomplete="off" id="iaLoginPassword" placeholder="Password" />
         <div class="inline-auth-error" id="iaLoginError"></div>
         <button class="inline-auth-submit ${side}" id="iaLoginBtn" onclick="inlineLogin('${side}')">Sign In & Bet ${sideLabel}</button>
       </div>
