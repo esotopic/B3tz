@@ -1685,14 +1685,14 @@ async function handleRequest(req, res) {
             u.Id, u.Username, u.DisplayName,
             COUNT(DISTINCT ub.BetId) AS totalBets,
             SUM(CASE WHEN b.Status = 'resolved' AND (
-              (ub.Side = 'yes' AND b.ResolvedSide = 'yes') OR
-              (ub.Side = 'no' AND b.ResolvedSide = 'no')
+              (ub.Side = 'yes' AND b.Resolution = 'yes') OR
+              (ub.Side = 'no' AND b.Resolution = 'no')
             ) THEN 1 ELSE 0 END) AS wins,
-            SUM(CASE WHEN b.Status = 'resolved' AND b.ResolvedSide IS NOT NULL AND (
-              (ub.Side = 'yes' AND b.ResolvedSide = 'no') OR
-              (ub.Side = 'no' AND b.ResolvedSide = 'yes')
+            SUM(CASE WHEN b.Status = 'resolved' AND b.Resolution IS NOT NULL AND (
+              (ub.Side = 'yes' AND b.Resolution = 'no') OR
+              (ub.Side = 'no' AND b.Resolution = 'yes')
             ) THEN 1 ELSE 0 END) AS losses,
-            SUM(CASE WHEN b.Status = 'resolved' AND b.ResolvedSide IS NOT NULL THEN 1 ELSE 0 END) AS resolved,
+            SUM(CASE WHEN b.Status = 'resolved' AND b.Resolution IS NOT NULL THEN 1 ELSE 0 END) AS resolved,
             (SELECT COUNT(*) FROM B3tz_Bets WHERE CreatedByUserId = u.Id) AS betsCreated,
             (SELECT COUNT(DISTINCT RivalUserId) FROM B3tz_Rivals WHERE UserId = u.Id) AS rivalCount,
             (SELECT COUNT(DISTINCT r2.RivalUserId) FROM B3tz_Rivals r1

@@ -2126,7 +2126,7 @@ footer .footer-text {
 
 <header>
   <div class="nav-inner">
-    <div class="logo" onclick="if(detailBetId||nemesisProfileId){navigateHome()}else{resetFilters()}">B3TZ <span>Bet On Anything</span></div>
+    <div class="logo" onclick="if(detailBetId||nemesisProfileId||document.getElementById('leaderboardView').classList.contains('active')){navigateHome()}else{resetFilters()}">B3TZ <span>Bet On Anything</span></div>
     <div class="nav-actions">
       <button class="btn-create" onclick="openCreateModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2950,9 +2950,10 @@ function showDetailView(betId) {
   activePlayerSide = 'yes';
   activeDetailTab = 'overview';
 
-  // Hide home & nemesis, show detail
+  // Hide home, nemesis & leaderboard, show detail
   document.getElementById('homeView').style.display = 'none';
   document.getElementById('nemesisView').classList.remove('active');
+  document.getElementById('leaderboardView').classList.remove('active');
   document.getElementById('detailView').classList.add('active');
   window.scrollTo(0, 0);
 
@@ -3068,6 +3069,7 @@ function showDetailView(betId) {
 function showHomeView() {
   document.getElementById('detailView').classList.remove('active');
   document.getElementById('nemesisView').classList.remove('active');
+  document.getElementById('leaderboardView').classList.remove('active');
   document.getElementById('homeView').style.display = '';
   detailBetId = null;
   activeChallengeCode = null;
@@ -3099,6 +3101,8 @@ function handleHashChange() {
     } else {
       navigateHome();
     }
+  } else if (hash === '#leaderboard') {
+    showLeaderboardView();
   } else {
     showHomeView();
   }
@@ -3447,9 +3451,10 @@ async function showNemesisProfile(rivalId) {
   nemesisCategory = 'All';
   nemesisViewMode = 'all';
 
-  // Hide home & detail, show nemesis view
+  // Hide home, detail & leaderboard, show nemesis view
   document.getElementById('homeView').style.display = 'none';
   document.getElementById('detailView').classList.remove('active');
+  document.getElementById('leaderboardView').classList.remove('active');
   document.getElementById('nemesisView').classList.add('active');
   window.scrollTo(0, 0);
 
@@ -3637,6 +3642,180 @@ document.getElementById('searchInput').addEventListener('input', () => {
   resetDisplayLimit();
   renderBets();
 });
+
+// ══════════════════════════════
+// ── Leaderboard ──
+// ══════════════════════════════
+let leaderboardData = null;
+let lbActiveTab = 'overall';
+
+const LB_TABS = [
+  { id: 'overall', label: '🏆 Overall' },
+  { id: 'accuracy', label: '🎯 Accuracy' },
+  { id: 'volume', label: '📊 Volume' },
+  { id: 'bold', label: '🔥 Bold Caller' },
+  { id: 'social', label: '⚔️ Social' }
+];
+
+function showLeaderboardView() {
+  document.getElementById('homeView').style.display = 'none';
+  document.getElementById('detailView').classList.remove('active');
+  document.getElementById('nemesisView').classList.remove('active');
+  document.getElementById('leaderboardView').classList.add('active');
+  detailBetId = null;
+  nemesisProfileId = null;
+  loadLeaderboard();
+}
+
+function hideLeaderboardView() {
+  document.getElementById('leaderboardView').classList.remove('active');
+}
+
+async function loadLeaderboard() {
+  const content = document.getElementById('lbContent');
+  content.innerHTML = '<div style="text-align:center;padding:60px 0;color:var(--text-muted);">Loading leaderboard...</div>';
+  renderLbTabs();
+
+  try {
+    const res = await fetch('/api/leaderboard');
+    const data = await res.json();
+    if (data.players) {
+      leaderboardData = data.players;
+      renderLeaderboard();
+    } else {
+      content.innerHTML = '<div style="text-align:center;padding:60px 0;color:var(--text-muted);">No leaderboard data yet.</div>';
+    }
+  } catch (e) {
+    content.innerHTML = '<div style="text-align:center;padding:60px 0;color:#ff5252;">Failed to load leaderboard.</div>';
+  }
+}
+
+function renderLbTabs() {
+  const tabs = document.getElementById('lbTabs');
+  tabs.innerHTML = LB_TABS.map(t =>
+    `<button class="lb-tab${lbActiveTab === t.id ? ' active' : ''}" onclick="switchLbTab('${t.id}')">${t.label}</button>`
+  ).join('');
+}
+
+function switchLbTab(tabId) {
+  lbActiveTab = tabId;
+  renderLbTabs();
+  renderLeaderboard();
+}
+
+function getSortedPlayers() {
+  if (!leaderboardData) return [];
+  const players = [...leaderboardData];
+  switch (lbActiveTab) {
+    case 'accuracy':
+      players.sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
+      break;
+    case 'volume':
+      players.sort((a, b) => b.totalBets - a.totalBets);
+      break;
+    case 'bold':
+      players.sort((a, b) => b.betsCreated - a.betsCreated);
+      break;
+    case 'social':
+      players.sort((a, b) => (b.rivalCount + b.nemesisCount + b.challengesSent) - (a.rivalCount + a.nemesisCount + a.challengesSent));
+      break;
+    default:
+      players.sort((a, b) => b.b3tzScore - a.b3tzScore);
+  }
+  players.forEach((p, i) => p._rank = i + 1);
+  return players;
+}
+
+function getTabMetric(player) {
+  switch (lbActiveTab) {
+    case 'accuracy': return player.winRate !== null ? player.winRate + '%' : '—';
+    case 'volume': return player.totalBets + ' bets';
+    case 'bold': return player.betsCreated + ' created';
+    case 'social': return (player.rivalCount + player.nemesisCount) + ' rivals';
+    default: return player.b3tzScore;
+  }
+}
+
+function getTabScoreLabel() {
+  switch (lbActiveTab) {
+    case 'accuracy': return 'Win Rate';
+    case 'volume': return 'Total Bets';
+    case 'bold': return 'Bets Created';
+    case 'social': return 'Rivals';
+    default: return 'B3tz Score';
+  }
+}
+
+function playerInitial(name) {
+  return (name || '?').charAt(0).toUpperCase();
+}
+
+function renderLeaderboard() {
+  const players = getSortedPlayers();
+  if (players.length === 0) {
+    document.getElementById('lbContent').innerHTML = '<div style="text-align:center;padding:60px 0;color:var(--text-muted);">No players yet.</div>';
+    return;
+  }
+
+  const top3 = players.slice(0, 3);
+  const rest = players.slice(3);
+  const meId = currentUser ? (currentUser.Id || currentUser.id) : null;
+
+  // Podium
+  const podiumClasses = ['gold', 'silver', 'bronze'];
+  const podiumEmojis = ['👑', '🥈', '🥉'];
+  let podiumHtml = '<div class="lb-podium">';
+  top3.forEach((p, i) => {
+    const cls = podiumClasses[i];
+    const isMe = meId && p.id === meId;
+    podiumHtml += `
+      <div class="lb-podium-card ${cls}${isMe ? ' is-me' : ''}" onclick="window.location.hash='nemesis/${p.id}'">
+        <div class="lb-rank-badge">${podiumEmojis[i]}</div>
+        <div class="lb-podium-avatar">${playerInitial(p.displayName)}</div>
+        <div class="lb-podium-name">${p.displayName}${isMe ? ' (you)' : ''}</div>
+        <div class="lb-podium-score">${getTabMetric(p)}</div>
+        <div class="lb-podium-label">${getTabScoreLabel()}</div>
+        <div class="lb-podium-sig">${p.signature || ''}</div>
+      </div>
+    `;
+  });
+  podiumHtml += '</div>';
+
+  // Table
+  let tableHtml = '';
+  if (rest.length > 0) {
+    tableHtml = '<table class="lb-table"><tbody>';
+    rest.forEach(p => {
+      const isMe = meId && p.id === meId;
+      const wrBar = p.winRate !== null
+        ? `<div class="lb-wr-bar"><div class="lb-wr-fill" style="width:${p.winRate}%"></div></div>`
+        : '';
+      tableHtml += `
+        <tr class="lb-table-row${isMe ? ' is-me' : ''}" onclick="window.location.hash='nemesis/${p.id}'">
+          <td>${p._rank}</td>
+          <td>
+            <div class="lb-player-cell">
+              <div class="lb-player-avatar">${playerInitial(p.displayName)}</div>
+              <div>
+                <div class="lb-player-name">${p.displayName}${isMe ? ' (you)' : ''}</div>
+                <div class="lb-player-sig">${p.signature || p.topCategory || ''}</div>
+              </div>
+            </div>
+          </td>
+          <td class="lb-score-cell">${getTabMetric(p)}</td>
+          <td class="lb-stat-cell">
+            <span class="win">${p.wins}W</span> / <span class="loss">${p.losses}L</span>
+            ${wrBar}
+          </td>
+          <td class="lb-stat-cell">${p.totalBets} bets</td>
+        </tr>
+      `;
+    });
+    tableHtml += '</tbody></table>';
+  }
+
+  document.getElementById('lbContent').innerHTML = podiumHtml + tableHtml;
+}
 
 // ── Bet handling (auth-aware) ──
 function handleBet(betId, side) {
