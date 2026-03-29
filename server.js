@@ -1147,20 +1147,28 @@ async function handleRequest(req, res) {
                   .input('id', sql.Int, ch.Id)
                   .input('recipientId', sql.Int, userId)
                   .query('UPDATE B3tz_Challenges SET RecipientUserId = @recipientId, ClaimedDate = GETUTCDATE() WHERE Id = @id');
-                // Create mutual rival entries (both directions)
-                try {
-                  await dbPool.request()
-                    .input('u1', sql.Int, ch.SenderUserId)
-                    .input('u2', sql.Int, userId)
-                    .query(`
-                      IF NOT EXISTS (SELECT 1 FROM B3tz_Rivals WHERE UserId = @u1 AND RivalUserId = @u2)
-                        INSERT INTO B3tz_Rivals (UserId, RivalUserId, Source) VALUES (@u1, @u2, 'challenge');
-                      IF NOT EXISTS (SELECT 1 FROM B3tz_Rivals WHERE UserId = @u2 AND RivalUserId = @u1)
-                        INSERT INTO B3tz_Rivals (UserId, RivalUserId, Source) VALUES (@u2, @u1, 'challenge');
-                    `);
-                  rivalCreated = true;
-                } catch (re) {
-                  console.error('Rival creation error:', re.message);
+                // Only create rivalry if they picked OPPOSITE sides
+                const senderBet = await dbPool.request()
+                  .input('senderId', sql.Int, ch.SenderUserId)
+                  .input('betId', sql.Int, betId)
+                  .query('SELECT Side FROM B3tz_UserBets WHERE UserId = @senderId AND BetId = @betId');
+                const senderSide = senderBet.recordset.length > 0 ? senderBet.recordset[0].Side : null;
+                if (senderSide && senderSide !== betSide) {
+                  // Opposite sides → create mutual rival entries (both directions)
+                  try {
+                    await dbPool.request()
+                      .input('u1', sql.Int, ch.SenderUserId)
+                      .input('u2', sql.Int, userId)
+                      .query(`
+                        IF NOT EXISTS (SELECT 1 FROM B3tz_Rivals WHERE UserId = @u1 AND RivalUserId = @u2)
+                          INSERT INTO B3tz_Rivals (UserId, RivalUserId, Source) VALUES (@u1, @u2, 'challenge');
+                        IF NOT EXISTS (SELECT 1 FROM B3tz_Rivals WHERE UserId = @u2 AND RivalUserId = @u1)
+                          INSERT INTO B3tz_Rivals (UserId, RivalUserId, Source) VALUES (@u2, @u1, 'challenge');
+                      `);
+                    rivalCreated = true;
+                  } catch (re) {
+                    console.error('Rival creation error:', re.message);
+                  }
                 }
               }
             }
