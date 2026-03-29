@@ -1105,6 +1105,216 @@ footer .footer-text {
 }
 .resolution-badge.yes { background: var(--yes-bg); color: var(--yes); border: 1px solid var(--yes-border); }
 .resolution-badge.no { background: var(--no-bg); color: var(--no); border: 1px solid var(--no-border); }
+
+/* ═══ EXPANDED CARD MODAL ═══ */
+.expanded-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 24px;
+  overflow-y: auto;
+}
+.expanded-overlay.open { display: flex; }
+.expanded-card {
+  width: 100%;
+  max-width: 640px;
+  background: var(--card);
+  border: 1px solid var(--border-hover);
+  border-radius: 20px;
+  overflow: hidden;
+  animation: slideUp 0.25s ease-out;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ec-header {
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--border);
+}
+.ec-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.ec-icon {
+  font-size: 40px;
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border-radius: 14px;
+}
+.ec-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+.ec-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.ec-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.ec-close:hover { background: var(--card-hover); color: var(--text); }
+.ec-odds {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.ec-odds .bet-btn {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  transition: all 0.2s;
+  text-align: center;
+}
+.ec-odds .bet-btn.yes { color: var(--yes); border-color: var(--yes-border); }
+.ec-odds .bet-btn.yes:hover { background: var(--yes-bg); }
+.ec-odds .bet-btn.no { color: var(--no); border-color: var(--no-border); }
+.ec-odds .bet-btn.no:hover { background: var(--no-bg); }
+.ec-odds .bet-btn.my-pick { box-shadow: inset 0 0 0 2px currentColor; }
+.ec-odds .bet-btn .label { font-size: 12px; font-weight: 500; margin-left: 6px; opacity: 0.7; }
+.ec-stats {
+  display: flex;
+  gap: 24px;
+  padding: 0 28px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.ec-stats span { display: flex; align-items: center; gap: 6px; }
+
+/* Voter lists */
+.ec-voters {
+  padding: 0 28px 28px;
+}
+.ec-voters-header {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ec-voters-tab {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-dim);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.ec-voters-tab.active-yes { color: var(--yes); border-bottom-color: var(--yes); }
+.ec-voters-tab.active-no { color: var(--no); border-bottom-color: var(--no); }
+.ec-voters-tab:hover { color: var(--text); }
+.ec-voter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.ec-voter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+.ec-voter:hover { background: var(--surface); }
+.ec-voter-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.ec-voter-avatar.yes-avatar { background: var(--yes-bg); color: var(--yes); border: 1px solid var(--yes-border); }
+.ec-voter-avatar.no-avatar { background: var(--no-bg); color: var(--no); border: 1px solid var(--no-border); }
+.ec-voter-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+.ec-voter-you {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-left: auto;
+}
+.ec-voter-you.yes { background: rgba(0,230,118,0.12); color: var(--yes); }
+.ec-voter-you.no { background: rgba(255,82,82,0.12); color: var(--no); }
+.ec-no-voters {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.ec-voters-loading {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.ec-criteria {
+  margin: 0 28px 16px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  border: 1px solid var(--border);
+}
+.ec-criteria strong { color: var(--text); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -1194,6 +1404,34 @@ footer .footer-text {
     <!-- filled by JS -->
   </div>
 </section>
+
+<!-- Expanded Card Modal -->
+<div class="expanded-overlay" id="expandedOverlay" onclick="if(event.target===this)closeExpanded()">
+  <div class="expanded-card" style="position:relative;">
+    <button class="ec-close" onclick="closeExpanded()">✕</button>
+    <div class="ec-header">
+      <div class="ec-top">
+        <div class="ec-icon" id="ecIcon"></div>
+        <div>
+          <div class="ec-title" id="ecTitle"></div>
+          <div class="ec-meta" id="ecMeta"></div>
+        </div>
+      </div>
+      <div class="ec-odds" id="ecOdds"></div>
+    </div>
+    <div class="ec-stats" id="ecStats"></div>
+    <div class="ec-criteria" id="ecCriteria" style="display:none;"></div>
+    <div class="ec-voters">
+      <div class="ec-voters-header">
+        <button class="ec-voters-tab active-yes" id="ecTabYes" onclick="showVoterTab('yes')">👍 Yes <span id="ecYesCount"></span></button>
+        <button class="ec-voters-tab" id="ecTabNo" onclick="showVoterTab('no')">👎 No <span id="ecNoCount"></span></button>
+      </div>
+      <div class="ec-voter-list" id="ecVoterList">
+        <div class="ec-voters-loading">Loading players...</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <footer>
   <div class="footer-inner">
@@ -1641,7 +1879,7 @@ function renderBets() {
     const myPickClass = myPick ? ` my-bet-${myPick}` : '';
     const myPickBadge = myPick ? `<span class="my-pick-badge ${myPick}">YOU: ${myPick.toUpperCase()}</span>` : '';
     return `
-    <div class="bet-card${bet.featured ? ' featured' : ''}${isResolved ? ' resolved' : ''}${myPickClass}" title="${bet.resolution_criteria ? bet.resolution_criteria.replace(/"/g, '&quot;') : ''}">
+    <div class="bet-card${bet.featured ? ' featured' : ''}${isResolved ? ' resolved' : ''}${myPickClass}" style="cursor:pointer;" onclick="openExpandedCard(${bet.id})" title="${bet.resolution_criteria ? bet.resolution_criteria.replace(/"/g, '&quot;') : ''}">
       <div class="card-top">
         <div class="card-icon">${bet.icon}</div>
         <div class="card-info">
@@ -1688,6 +1926,143 @@ function updateStats() {
   const preds = allBets.reduce((s, b) => s + b.yes_count + b.no_count, 0);
   document.getElementById('totalBettors').textContent = preds.toLocaleString();
 }
+
+// ═══ EXPANDED CARD VIEW ═══
+let expandedBetId = null;
+let expandedVoters = { yes: [], no: [] };
+let activeVoterTab = 'yes';
+
+function openExpandedCard(betId) {
+  const bet = allBets.find(b => b.id === betId);
+  if (!bet) return;
+  expandedBetId = betId;
+  activeVoterTab = 'yes';
+
+  // Fill header
+  document.getElementById('ecIcon').textContent = bet.icon;
+  document.getElementById('ecTitle').textContent = bet.title;
+
+  const myPick = myBetsMap[bet.id] || null;
+  const myBadge = myPick ? `<span class="my-pick-badge ${myPick}">YOU: ${myPick.toUpperCase()}</span>` : '';
+  document.getElementById('ecMeta').innerHTML = `
+    <span class="cat-tag">${bet.category}</span>
+    ${myBadge}
+    <span class="date-tag">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      ${bet.event_date ? formatDate(bet.event_date) : 'TBD'}
+    </span>
+    <span style="color:var(--text-muted);">by ${bet.created_by}</span>
+  `;
+
+  // Odds buttons
+  const isResolved = bet.status === 'resolved';
+  document.getElementById('ecOdds').innerHTML = `
+    <button class="bet-btn yes${myPick === 'yes' ? ' my-pick' : ''}" onclick="event.stopPropagation(); handleBet(${bet.id}, 'yes'); setTimeout(()=>openExpandedCard(${bet.id}),300);" ${isResolved ? 'disabled' : ''}>
+      ${bet.yes_odds}%<span class="label">Yes</span>
+    </button>
+    <button class="bet-btn no${myPick === 'no' ? ' my-pick' : ''}" onclick="event.stopPropagation(); handleBet(${bet.id}, 'no'); setTimeout(()=>openExpandedCard(${bet.id}),300);" ${isResolved ? 'disabled' : ''}>
+      ${bet.no_odds}%<span class="label">No</span>
+    </button>
+  `;
+
+  // Stats
+  document.getElementById('ecStats').innerHTML = `
+    <span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      ${formatVolume(bet.volume)} volume
+    </span>
+    <span>👥 ${(bet.yes_count + bet.no_count).toLocaleString()} total bets</span>
+    <span>🟢 ${bet.yes_count.toLocaleString()} yes</span>
+    <span>🔴 ${bet.no_count.toLocaleString()} no</span>
+  `;
+
+  // Resolution criteria
+  const criteriaEl = document.getElementById('ecCriteria');
+  if (bet.resolution_criteria) {
+    criteriaEl.innerHTML = `<strong>Resolution criteria:</strong> ${bet.resolution_criteria}`;
+    criteriaEl.style.display = 'block';
+  } else {
+    criteriaEl.style.display = 'none';
+  }
+
+  // Reset voter tabs
+  document.getElementById('ecTabYes').className = 'ec-voters-tab active-yes';
+  document.getElementById('ecTabNo').className = 'ec-voters-tab';
+
+  // Show modal
+  document.getElementById('expandedOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Load voters
+  loadVoters(betId);
+}
+
+async function loadVoters(betId) {
+  const listEl = document.getElementById('ecVoterList');
+  listEl.innerHTML = '<div class="ec-voters-loading">Loading players...</div>';
+
+  try {
+    const resp = await fetch(`/api/bets/${betId}/voters`, { credentials: 'include' });
+    const data = await resp.json();
+    expandedVoters = { yes: data.yesVoters || [], no: data.noVoters || [] };
+
+    document.getElementById('ecYesCount').textContent = `(${expandedVoters.yes.length})`;
+    document.getElementById('ecNoCount').textContent = `(${expandedVoters.no.length})`;
+
+    renderVoterList();
+  } catch (e) {
+    listEl.innerHTML = '<div class="ec-no-voters">Failed to load players</div>';
+  }
+}
+
+function showVoterTab(tab) {
+  activeVoterTab = tab;
+  const yesTab = document.getElementById('ecTabYes');
+  const noTab = document.getElementById('ecTabNo');
+  yesTab.className = tab === 'yes' ? 'ec-voters-tab active-yes' : 'ec-voters-tab';
+  noTab.className = tab === 'no' ? 'ec-voters-tab active-no' : 'ec-voters-tab';
+  renderVoterList();
+}
+
+function renderVoterList() {
+  const listEl = document.getElementById('ecVoterList');
+  const voters = activeVoterTab === 'yes' ? expandedVoters.yes : expandedVoters.no;
+  const side = activeVoterTab;
+
+  if (voters.length === 0) {
+    const emoji = side === 'yes' ? '🟢' : '🔴';
+    listEl.innerHTML = `<div class="ec-no-voters">${emoji} No one has bet ${side.toUpperCase()} yet. Be the first!</div>`;
+    return;
+  }
+
+  listEl.innerHTML = voters.map(v => {
+    const isYou = currentUser && v.id === currentUser.id;
+    const initial = (v.displayName || v.username || '?')[0].toUpperCase();
+    return `
+      <div class="ec-voter">
+        <div class="ec-voter-avatar ${side}-avatar">${initial}</div>
+        <span class="ec-voter-name">${v.displayName || v.username}</span>
+        ${isYou ? `<span class="ec-voter-you ${side}">YOU</span>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function closeExpanded() {
+  document.getElementById('expandedOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  expandedBetId = null;
+}
+
+// Close on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeExpanded();
+    // also close any other modal
+    const authModal = document.getElementById('authModal');
+    if (authModal && authModal.style.display !== 'none') authModal.style.display = 'none';
+  }
+});
 
 function filterCategory(cat) {
   activeCategory = (activeCategory === cat) ? 'All' : cat; // toggle off if same

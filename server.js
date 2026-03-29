@@ -778,6 +778,43 @@ async function handleRequest(req, res) {
   }
 
   // ══════════════════════════════════
+  // ── API: Get Bet Voters ──
+  // ══════════════════════════════════
+
+  const votersMatch = pathname.match(/^\/api\/bets\/(\d+)\/voters$/);
+  if (votersMatch && req.method === 'GET') {
+    const betId = parseInt(votersMatch[1]);
+
+    if (dbPool) {
+      try {
+        const result = await dbPool.request()
+          .input('betId', sql.Int, betId)
+          .query(`
+            SELECT u.Id, u.Username, u.DisplayName, ub.Side, ub.PlacedDate
+            FROM B3tz_UserBets ub
+            JOIN B3tz_Users u ON u.Id = ub.UserId
+            WHERE ub.BetId = @betId
+            ORDER BY ub.PlacedDate ASC
+          `);
+
+        const yesVoters = result.recordset
+          .filter(r => r.Side === 'yes')
+          .map(r => ({ id: r.Id, username: r.Username, displayName: r.DisplayName || r.Username }));
+        const noVoters = result.recordset
+          .filter(r => r.Side === 'no')
+          .map(r => ({ id: r.Id, username: r.Username, displayName: r.DisplayName || r.Username }));
+
+        return sendJSON(res, 200, { yesVoters, noVoters });
+      } catch (e) {
+        console.error('Voters error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to load voters' });
+      }
+    } else {
+      return sendJSON(res, 200, { yesVoters: [], noVoters: [] });
+    }
+  }
+
+  // ══════════════════════════════════
   // ── API: AI Bet Validation ──
   // ══════════════════════════════════
 
