@@ -2316,13 +2316,20 @@ async function doLogout() {
   } catch (e) { /* ignore */ }
   currentUser = null;
   myBetsMap = {};
+  myRivals = [];
+  rivalBetMap = {};
   viewMode = 'all';
   involvement = 'everyone';
+  // If on nemesis profile or detail view, go home
+  if (nemesisProfileId || detailBetId) {
+    window.location.hash = '';
+  }
   updateNavUI();
   closeUserMenu();
   document.querySelectorAll('.involvement-btn').forEach(btn => btn.classList.remove('active'));
   document.getElementById('invAll').classList.add('active');
   updateViewFiltersVisibility();
+  renderAvatarRow();
   renderFilterRow();
   renderBets();
   showToast('Signed out. See you next time!');
