@@ -290,9 +290,9 @@ header {
   box-shadow: 0 2px 12px var(--accent-glow);
 }
 .tab-pill.tab-nemesis.active {
-  background: linear-gradient(135deg, #ff6b35, #ff2222);
-  border-color: #ff4444;
-  box-shadow: 0 2px 12px rgba(255,68,68,0.3);
+  background: linear-gradient(135deg, #D97706, #b45309);
+  border-color: #D97706;
+  box-shadow: 0 2px 12px rgba(217,119,6,0.3);
 }
 .tab-pill.tab-rivals.active {
   background: linear-gradient(135deg, #7c4dff, #448aff);
@@ -378,8 +378,8 @@ header {
   flex-shrink: 0;
 }
 .avatar-chip:hover { border-color: var(--border-hover); background: var(--card-hover); }
-.avatar-chip.nemesis-chip { border-color: rgba(255,64,129,0.3); background: rgba(255,64,129,0.06); }
-.avatar-chip.nemesis-chip:hover { border-color: rgba(255,64,129,0.5); }
+.avatar-chip.nemesis-chip { border-color: rgba(217,119,6,0.3); background: rgba(217,119,6,0.06); }
+.avatar-chip.nemesis-chip:hover { border-color: rgba(217,119,6,0.5); }
 .avatar-chip-img {
   width: 32px; height: 32px;
   border-radius: 50%;
@@ -387,7 +387,7 @@ header {
   font-weight: 700; font-size: 14px;
   background: rgba(124,77,255,0.15); color: var(--accent);
 }
-.nemesis-chip .avatar-chip-img { background: rgba(255,64,129,0.15); color: #ff4081; }
+.nemesis-chip .avatar-chip-img { background: rgba(217,119,6,0.15); color: #D97706; }
 .avatar-chip-info { display: flex; flex-direction: column; }
 .avatar-chip-name { font-size: 13px; font-weight: 600; color: var(--text); }
 .avatar-chip-stat { font-size: 11px; color: var(--text-muted); }
@@ -398,7 +398,7 @@ header {
   font-weight: 600;
   margin-left: 4px;
 }
-.badge-nemesis { background: rgba(255,64,129,0.12); color: #ff4081; }
+.badge-nemesis { background: rgba(217,119,6,0.12); color: #D97706; }
 .badge-rival { background: rgba(124,77,255,0.12); color: var(--accent); }
 
 /* H2H Modal */
@@ -465,7 +465,7 @@ header {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #ff4081, #7c4dff, #ffd740);
+  background: linear-gradient(90deg, #D97706, #7c4dff, #ffd740);
 }
 .nem-profile-top {
   display: flex;
@@ -482,9 +482,9 @@ header {
   justify-content: center;
   font-size: 32px;
   font-weight: 800;
-  background: rgba(255,64,129,0.15);
-  color: #ff4081;
-  border: 3px solid rgba(255,64,129,0.3);
+  background: rgba(217,119,6,0.15);
+  color: #D97706;
+  border: 3px solid rgba(217,119,6,0.3);
   flex-shrink: 0;
 }
 .nem-info h2 {
@@ -501,8 +501,8 @@ header {
   font-family: 'Inter', sans-serif;
   padding: 3px 10px;
   border-radius: 12px;
-  background: rgba(255,64,129,0.12);
-  color: #ff4081;
+  background: rgba(217,119,6,0.12);
+  color: #D97706;
   font-weight: 700;
   letter-spacing: 0.5px;
 }
@@ -532,7 +532,7 @@ header {
 }
 .nem-stat-val.win { color: var(--yes); }
 .nem-stat-val.loss { color: var(--no); }
-.nem-stat-val.fire { color: #ff4081; }
+.nem-stat-val.fire { color: #D97706; }
 .nem-stat-label {
   font-size: 12px;
   color: var(--text-dim);
@@ -1800,7 +1800,7 @@ footer .footer-text {
   align-items: center;
   gap: 14px;
   padding: 16px 20px;
-  background: linear-gradient(135deg, rgba(124,77,255,0.12), rgba(255,64,129,0.08));
+  background: linear-gradient(135deg, rgba(124,77,255,0.12), rgba(217,119,6,0.08));
   border: 1px solid rgba(124,77,255,0.25);
   border-radius: 14px;
   margin-bottom: 20px;
@@ -1808,7 +1808,7 @@ footer .footer-text {
 }
 @keyframes bannerPulse {
   0% { border-color: rgba(124,77,255,0.25); }
-  100% { border-color: rgba(255,64,129,0.35); }
+  100% { border-color: rgba(217,119,6,0.35); }
 }
 .challenge-banner-icon { font-size: 28px; }
 .challenge-banner-text {
@@ -1864,7 +1864,7 @@ footer .footer-text {
 
 <header>
   <div class="nav-inner">
-    <div class="logo" onclick="if(detailBetId){navigateHome()}else{resetFilters()}">B3TZ <span>Bet On Anything</span></div>
+    <div class="logo" onclick="if(detailBetId||nemesisProfileId){navigateHome()}else{resetFilters()}">B3TZ <span>Bet On Anything</span></div>
     <div class="nav-actions">
       <button class="btn-create" onclick="openCreateModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1897,7 +1897,7 @@ footer .footer-text {
   <div class="hero-glow purple"></div>
   <div class="hero-glow pink"></div>
   <h1>Find Your <span class="highlight">Nemesis</span></h1>
-  <p>Pick a side. Call your shot. Find out who keeps betting against you  then make it personal.</p>
+  <p>Pick a side. Call your shot. Find out who keeps betting against you. Then make it personal!</p>
 </section>
 
 <div class="search-section">
@@ -2876,10 +2876,10 @@ function renderPlayersList() {
     const rivalBtn = (!isYou && currentUser)
       ? `<button class="btn-mark-rival${isRiv ? ' active' : ''}" onclick="event.stopPropagation();toggleRival(${v.id},'${(v.displayName || v.username).replace(/'/g, "\\'")}')" title="${isRiv ? 'Remove rival' : 'Mark as rival'}">${rivalLabel}</button>`
       : '';
-    const nemBadge = isNem ? '<span class="player-badge rival" style="background:rgba(255,64,129,0.12);color:#ff4081;">NEMESIS</span>' : isRiv ? '<span class="player-badge rival">RIVAL</span>' : '';
-    const clickAction = (!isYou && currentUser)
-      ? (isNem ? `window.location.hash='nemesis/${v.id}'` : `openH2H(${v.id})`)
-      : '';
+    const nemBadge = isNem ? '<span class="player-badge rival" style="background:rgba(217,119,6,0.12);color:#D97706;">NEMESIS</span>' : isRiv ? '<span class="player-badge rival">RIVAL</span>' : '';
+    const clickAction = (!isYou && currentUser && (isNem || isRiv))
+      ? `window.location.hash='nemesis/${v.id}'`
+      : ((!isYou && currentUser) ? `openH2H(${v.id})` : '');
     return `
       <div class="player-row" ${clickAction ? `style="cursor:pointer" onclick="${clickAction}"` : ''}>
         <div class="player-avatar ${side}-avatar">${initial}</div>
@@ -3078,9 +3078,7 @@ function renderAvatarRow() {
     const badge = isNem
       ? '<span class="avatar-chip-badge badge-nemesis">NEMESIS</span>'
       : '<span class="avatar-chip-badge badge-rival">RIVAL</span>';
-    const clickAction = isNem
-      ? `window.location.hash='nemesis/${r.id}'`
-      : `openH2H(${r.id})`;
+    const clickAction = `window.location.hash='nemesis/${r.id}'`;
     return `
       <div class="${chipClass}" onclick="${clickAction}">
         <div class="avatar-chip-img">${initial}</div>
@@ -3129,7 +3127,7 @@ async function openH2H(rivalId) {
         </div>
         <div class="h2h-vs">${isNem ? '🔥' : '⚔️'} VS</div>
         <div class="h2h-user">
-          <div class="h2h-user-avatar" style="background:${isNem ? 'rgba(255,64,129,0.15);color:#ff4081' : 'rgba(124,77,255,0.15);color:var(--accent)'};">${theirInitial}</div>
+          <div class="h2h-user-avatar" style="background:${isNem ? 'rgba(217,119,6,0.15);color:#D97706' : 'rgba(124,77,255,0.15);color:var(--accent)'};">${theirInitial}</div>
           <div class="h2h-user-name">${r.displayName || r.username}</div>
         </div>
       </div>
