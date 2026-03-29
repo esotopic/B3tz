@@ -1597,7 +1597,7 @@ async function aiValidateBet() {
       // Show clarification step
       showClarifyStep(result, input);
     } else if (result.status === 'invalid') {
-      errorEl.textContent = result.reason || 'This doesn't look like a valid bet.';
+      errorEl.textContent = result.reason || 'This does not look like a valid bet.';
       errorEl.style.display = 'block';
     }
   } catch (e) {
