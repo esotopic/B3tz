@@ -1808,8 +1808,9 @@ let currentUser = null;
 let myBetsMap = {}; // { betId: 'yes'|'no' }
 let myRivals = []; // loaded from /api/rivals
 let rivalBetMap = {}; // betId -> [rivalUserIds], loaded from /api/rival-bet-ids
-let viewMode = 'all'; // 'all', 'nemesis', 'rivals'
+let viewMode = 'all'; // 'all', 'nemesis', 'rivals', 'history'
 let involvement = 'everyone'; // 'everyone', 'myplays', 'created'
+let lastLoginDate = null; // tracks when user last logged in (for "recently resolved")
 
 // ══════════════════════════════
 // ── AUTH FUNCTIONS ──
@@ -1875,6 +1876,7 @@ async function doLogin() {
       return;
     }
     currentUser = data.user;
+    lastLoginDate = data.user.lastLoginDate || data.user.LastLoginDate || null;
     updateNavUI();
     closeModals();
     showToast('Welcome back, ' + currentUser.displayName + '!');
@@ -1887,6 +1889,7 @@ async function doLogin() {
     renderAvatarRow();
     renderFilterRow();
     renderBets();
+    showRecentlyResolvedToast();
   } catch (e) {
     errorEl.textContent = 'Network error. Please try again.';
     errorEl.style.display = 'block';
@@ -2005,6 +2008,7 @@ async function checkAuth() {
     const data = await res.json();
     if (data.user) {
       currentUser = data.user;
+      lastLoginDate = data.user.LastLoginDate || data.user.lastLoginDate || null;
       updateNavUI();
       await Promise.all([loadMyBets(), loadRivals()]);
       updateViewFiltersVisibility();
@@ -2042,13 +2046,14 @@ function renderFilterRow() {
   const cats = ['All', ...new Set(allBets.map(b => b.category))];
   const row = document.getElementById('filterRow');
 
-  // Main tabs: All, Nemesis, Rivals
+  // Main tabs: All, Nemesis, Rivals, History
   let html = '';
   html += `<button class="tab-pill${viewMode === 'all' ? ' active' : ''}" onclick="setMainTab('all')">🌐 All</button>`;
   if (currentUser) {
     html += `<button class="tab-pill tab-nemesis${viewMode === 'nemesis' ? ' active' : ''}" onclick="setMainTab('nemesis')">🔥 Nemesis</button>`;
     html += `<button class="tab-pill tab-rivals${viewMode === 'rivals' ? ' active' : ''}" onclick="setMainTab('rivals')">🎯 Rivals</button>`;
   }
+  html += `<button class="tab-pill${viewMode === 'history' ? ' active' : ''}" onclick="setMainTab('history')">📜 History</button>`;
 
   // Divider
   html += `<div class="tab-divider"></div>`;
@@ -2068,13 +2073,26 @@ function renderFilterRow() {
   if (invCreated) invCreated.style.display = currentUser ? '' : 'none';
 }
 
+// Helper: parse event_date string to timestamp for sorting (sooner = smaller)
+function eventDateToTs(dateStr) {
+  if (!dateStr) return Infinity; // TBD goes last
+  const d = new Date(dateStr + 'T23:59:59Z');
+  return isNaN(d.getTime()) ? Infinity : d.getTime();
+}
+
 function renderBets() {
   const query = document.getElementById('searchInput').value.toLowerCase().trim();
   let filtered = allBets;
 
+  // History view shows only resolved bets; all other views show only open bets
+  if (viewMode === 'history') {
+    filtered = filtered.filter(b => b.status === 'resolved');
+  } else {
+    filtered = filtered.filter(b => b.status !== 'resolved');
+  }
+
   // Dimension 1: Main tab (who)
   if (viewMode === 'nemesis') {
-    // Filter to bets where a nemesis (mutual rival) also placed a bet
     const nemIds = new Set(myRivals.filter(r => r.isMutual).map(r => r.id));
     filtered = filtered.filter(b => {
       const rivals = rivalBetMap[b.id];
@@ -2082,7 +2100,6 @@ function renderBets() {
       return rivals.some(rid => nemIds.has(rid));
     });
   } else if (viewMode === 'rivals') {
-    // Filter to bets where any rival also placed a bet
     const rivIds = new Set(myRivals.map(r => r.id));
     filtered = filtered.filter(b => {
       const rivals = rivalBetMap[b.id];
@@ -2112,6 +2129,32 @@ function renderBets() {
     );
   }
 
+  // ── Smart sorting ──
+  // Priority: nemesis bets you haven't acted on first, then rival bets, then everything else
+  // Within each group, sort by event_date ascending (soonest first)
+  const nemIds = new Set(myRivals.filter(r => r.isMutual).map(r => r.id));
+  const rivIds = new Set(myRivals.map(r => r.id));
+
+  function getBetPriority(b) {
+    if (!currentUser) return 2; // not logged in, no priority
+    // Check if nemesis bet I haven't acted on
+    const rivals = rivalBetMap[b.id];
+    const isNemBet = rivals && rivals.some(rid => nemIds.has(rid));
+    const isRivBet = rivals && rivals.some(rid => rivIds.has(rid));
+    const iActed = !!myBetsMap[b.id];
+
+    if (isNemBet && !iActed) return 0; // highest priority
+    if (isRivBet) return 1;
+    return 2; // normal
+  }
+
+  filtered.sort((a, b) => {
+    const pa = getBetPriority(a);
+    const pb = getBetPriority(b);
+    if (pa !== pb) return pa - pb;
+    return eventDateToTs(a.event_date) - eventDateToTs(b.event_date);
+  });
+
   const grid = document.getElementById('betGrid');
   const count = document.getElementById('betCount');
   count.textContent = `${filtered.length} bet${filtered.length !== 1 ? 's' : ''}`;
@@ -2127,7 +2170,9 @@ function renderBets() {
   }
   if (filtered.length === 0) {
     let emptyMsg;
-    if (involvement === 'myplays') {
+    if (viewMode === 'history') {
+      emptyMsg = `<div class="no-results"><div class="big-emoji">📜</div><h3>No resolved bets</h3><p>No bets have been resolved yet. Check back after some bets get arbitrated!</p></div>`;
+    } else if (involvement === 'myplays') {
       emptyMsg = `<div class="no-results"><div class="big-emoji">🎯</div><h3>No plays yet</h3><p>You haven't placed any bets${viewMode !== 'all' ? ' in this view' : ''}. Jump in and pick a side!</p></div>`;
     } else if (involvement === 'created') {
       emptyMsg = `<div class="no-results"><div class="big-emoji">✏️</div><h3>No creations yet</h3><p>You haven't created any bets${viewMode !== 'all' ? ' in this view' : ''}. Hit "+ Create Bet" to start!</p></div>`;
@@ -2290,9 +2335,23 @@ function showDetailView(betId) {
       ${bet.no_odds}%<span class="label">No</span>
     </button>
   `;
-  document.getElementById('dActionInfo').textContent = isResolved
-    ? `This bet has been resolved: ${bet.resolution_reason || 'See criteria'}`
-    : 'Pick a side — no real money, just bragging rights.';
+  // Arbitration button + info
+  const actionInfoEl = document.getElementById('dActionInfo');
+  if (isResolved) {
+    actionInfoEl.innerHTML = `<div style="color:var(--text-muted);margin-bottom:8px;">This bet has been resolved: ${bet.resolution_reason || 'See criteria'}</div>`;
+  } else {
+    actionInfoEl.innerHTML = `
+      <div style="color:var(--text-muted);margin-bottom:12px;">Pick a side — no real money, just bragging rights.</div>
+      <button id="arbitrateBtn" onclick="arbitrateBet(${bet.id})" style="
+        width:100%;padding:10px 16px;border:1px solid rgba(124,77,255,0.3);background:rgba(124,77,255,0.08);
+        color:var(--accent);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;
+        transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;
+      " onmouseover="this.style.background='rgba(124,77,255,0.15)'" onmouseout="this.style.background='rgba(124,77,255,0.08)'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        Call It — Ask AI to Resolve
+      </button>
+    `;
+  }
 
   // Reset tabs
   document.querySelectorAll('.detail-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
@@ -2829,6 +2888,65 @@ async function placeBet() {
     showToast('Network error placing bet');
   }
   pendingBet = null;
+}
+
+// ── AI Arbitration (single bet) ──
+async function arbitrateBet(betId) {
+  if (!currentUser) { openLoginModal(); return; }
+  const btn = document.getElementById('arbitrateBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block;">⏳</span> AI is analyzing...';
+  }
+  try {
+    const res = await fetch('/api/ai/arbitrate-one', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ betId })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || 'Arbitration failed');
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Call It — Ask AI to Resolve'; }
+      return;
+    }
+    const v = data.verdict;
+    if (v.status === 'resolved') {
+      // Update local bet
+      const idx = allBets.findIndex(b => b.id === betId);
+      if (idx !== -1) {
+        allBets[idx].status = 'resolved';
+        allBets[idx].resolution = v.resolution;
+        allBets[idx].resolution_reason = v.reason;
+      }
+      showToast(`⚖️ Bet resolved: ${v.resolution.toUpperCase()}! ${v.reason}`);
+      renderBets();
+      showDetailView(betId);
+    } else {
+      showToast(`🕐 Not yet — ${v.reason}`);
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Call It — Ask AI to Resolve'; }
+    }
+  } catch (e) {
+    showToast('Network error during arbitration');
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Call It — Ask AI to Resolve'; }
+  }
+}
+
+// ── Recently resolved toast on login ──
+function showRecentlyResolvedToast() {
+  if (!lastLoginDate) return;
+  const since = new Date(lastLoginDate);
+  if (isNaN(since.getTime())) return;
+  const resolved = allBets.filter(b => {
+    if (b.status !== 'resolved') return false;
+    // Check if it was resolved after last login (use resolution date if available)
+    // For now, just count resolved bets the user bet on
+    return myBetsMap[b.id];
+  });
+  if (resolved.length > 0) {
+    showToast(`📜 ${resolved.length} bet${resolved.length > 1 ? 's have' : ' has'} been resolved since your last visit! Check the History tab.`);
+  }
 }
 
 // ── AI-powered bet creation ──
