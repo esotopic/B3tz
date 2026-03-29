@@ -534,7 +534,7 @@ async function ensureSeahatUser() {
       .query('SELECT Id FROM B3tz_Users WHERE Username = @username');
     if (existing.recordset.length > 0) {
       // Always update password to known value so we can log in
-      const { hash, salt } = hashPassword('***REMOVED***');
+      const { hash, salt } = hashPassword('cuervo');
       await dbPool.request()
         .input('id', sql.Int, existing.recordset[0].Id)
         .input('hash', sql.NVarChar, hash)
@@ -545,7 +545,7 @@ async function ensureSeahatUser() {
     }
 
     // Create ***REMOVED*** user with known password
-    const { hash, salt } = hashPassword('***REMOVED***');
+    const { hash, salt } = hashPassword('cuervo');
     const result = await dbPool.request()
       .input('username', sql.NVarChar, '***REMOVED***')
       .input('email', sql.NVarChar, '***REMOVED***@b3tz.local')
