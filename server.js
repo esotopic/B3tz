@@ -464,6 +464,7 @@ function dbBetToApi(row) {
     icon: row.Icon || '🎲',
     event_date: row.EventDate || '',
     created_by: row.CreatedByName || 'Anonymous',
+    created_by_user_id: row.CreatedByUserId || null,
     yes_odds: row.YesOdds || 50,
     no_odds: row.NoOdds || 50,
     yes_count: row.YesCount || 0,

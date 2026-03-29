@@ -275,21 +275,21 @@ header {
   color: var(--text-muted);
 }
 
-/* ═══ CATEGORIES ═══ */
-.categories {
+/* ═══ FILTER TAB ROW ═══ */
+.filter-row {
   max-width: 1360px;
   margin: 0 auto;
-  padding: 0 24px 32px;
+  padding: 0 24px 12px;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+.filter-row::-webkit-scrollbar { display: none; }
 
-.categories::-webkit-scrollbar { display: none; }
-
-.cat-pill {
+.tab-pill {
   flex-shrink: 0;
   padding: 8px 18px;
   border-radius: 100px;
@@ -303,19 +303,86 @@ header {
   transition: all 0.2s;
   white-space: nowrap;
 }
-
-.cat-pill:hover {
+.tab-pill:hover {
   border-color: var(--border-hover);
   color: var(--text);
   background: var(--surface);
 }
-
-.cat-pill.active {
+.tab-pill.active {
   background: var(--accent);
   border-color: var(--accent);
   color: white;
   box-shadow: 0 2px 12px var(--accent-glow);
 }
+.tab-pill.tab-nemesis.active {
+  background: linear-gradient(135deg, #ff6b35, #ff2222);
+  border-color: #ff4444;
+  box-shadow: 0 2px 12px rgba(255,68,68,0.3);
+}
+.tab-pill.tab-rivals.active {
+  background: linear-gradient(135deg, #7c4dff, #448aff);
+  border-color: #448aff;
+  box-shadow: 0 2px 12px rgba(68,138,255,0.3);
+}
+.tab-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+/* ═══ INVOLVEMENT TOGGLE ═══ */
+.involvement-row {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 24px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.involvement-toggle {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px;
+}
+.involvement-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 100px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.involvement-btn:hover {
+  color: var(--text-dim);
+}
+.involvement-btn.active {
+  background: var(--card);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* ═══ AVATAR ROW (placeholder for Phase 4) ═══ */
+.avatar-row {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 24px 16px;
+  display: none;
+}
+
+/* ═══ OLD .categories compat ═══ */
+.categories { display: none; }
 
 /* ═══ BET GRID ═══ */
 .bets-section {
@@ -955,43 +1022,78 @@ footer .footer-text {
 .bet-btn.yes.my-pick { background: rgba(0,230,118,0.2); }
 .bet-btn.no.my-pick { background: rgba(255,82,82,0.2); }
 
-/* ═══ VIEW FILTER BUTTONS ═══ */
-.view-filters {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+/* ═══ EMPTY STATE (nemesis/rivals) ═══ */
+.empty-feature {
+  text-align: center;
+  padding: 60px 24px;
+  max-width: 480px;
+  margin: 0 auto;
 }
-.view-filter-btn {
-  padding: 6px 16px;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  background: transparent;
+.empty-feature .ef-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  filter: grayscale(0.3);
+}
+.empty-feature h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+.empty-feature p {
   color: var(--text-dim);
-  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+.empty-feature .ef-steps {
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+.empty-feature .ef-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
   font-size: 13px;
-  font-weight: 500;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.empty-feature .ef-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.empty-feature .ef-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--accent);
+  border: none;
+  border-radius: 100px;
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
 }
-.view-filter-btn:hover {
-  background: var(--surface);
-  border-color: var(--border-hover);
-  color: var(--text);
-}
-.view-filter-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  font-weight: 600;
-}
-.view-filter-btn.active:hover {
-  background: #6a3de8;
-  border-color: #6a3de8;
-}
+.empty-feature .ef-cta:hover { background: #6a3de8; }
 .resolution-badge {
   display: inline-flex;
   align-items: center;
@@ -1064,21 +1166,29 @@ footer .footer-text {
   </div>
 </div>
 
-<div class="categories" id="categoryBar">
+<div class="categories" id="categoryBar"></div>
+
+<!-- Main tab row: All / Nemesis / Rivals | Category pills -->
+<div class="filter-row" id="filterRow">
   <!-- filled by JS -->
 </div>
 
+<!-- Involvement toggle row -->
+<div class="involvement-row">
+  <div class="involvement-toggle" id="involvementToggle">
+    <button class="involvement-btn active" id="invAll" onclick="setInvolvement('everyone')">Everyone</button>
+    <button class="involvement-btn" id="invPlays" onclick="setInvolvement('myplays')">My Plays</button>
+    <button class="involvement-btn" id="invCreated" onclick="setInvolvement('created')">Created</button>
+  </div>
+  <span class="bet-count" id="betCount"></span>
+</div>
+
+<!-- Avatar row placeholder (Phase 4) -->
+<div class="avatar-row" id="avatarRow"></div>
+
 <section class="bets-section">
-  <div class="section-header">
-    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-      <h2 class="section-title" id="sectionTitle">All Markets</h2>
-      <div class="view-filters" id="viewFilters" style="display:none;">
-        <button class="view-filter-btn active" id="filterAll" onclick="setViewFilter('all')">All Bets</button>
-        <button class="view-filter-btn" id="filterMine" onclick="setViewFilter('mybets')">My Bets</button>
-        <button class="view-filter-btn" id="filterNemesis" onclick="setViewFilter('nemesis')">Nemesis Bets</button>
-      </div>
-    </div>
-    <span class="bet-count" id="betCount"></span>
+  <div class="section-header" style="display:none;">
+    <h2 class="section-title" id="sectionTitle">All Markets</h2>
   </div>
   <div class="bet-grid" id="betGrid">
     <!-- filled by JS -->
@@ -1216,7 +1326,8 @@ let pendingBet = null;
 let selectedPosition = 'yes';
 let currentUser = null;
 let myBetsMap = {}; // { betId: 'yes'|'no' }
-let viewMode = 'all'; // 'all' or 'mybets'
+let viewMode = 'all'; // 'all', 'nemesis', 'rivals'
+let involvement = 'everyone'; // 'everyone', 'myplays', 'created'
 
 // ══════════════════════════════
 // ── AUTH FUNCTIONS ──
@@ -1354,12 +1465,13 @@ async function doLogout() {
   currentUser = null;
   myBetsMap = {};
   viewMode = 'all';
+  involvement = 'everyone';
   updateNavUI();
   closeUserMenu();
-  document.getElementById('sectionTitle').textContent = 'All Markets';
-  document.querySelectorAll('.view-filter-btn').forEach(btn => btn.classList.remove('active'));
-  document.getElementById('filterAll').classList.add('active');
+  document.querySelectorAll('.involvement-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('invAll').classList.add('active');
   updateViewFiltersVisibility();
+  renderFilterRow();
   renderBets();
   showToast('Signed out. See you next time!');
 }
@@ -1422,7 +1534,7 @@ async function loadBets() {
     const res = await fetch('/api/bets');
     const data = await res.json();
     allBets = data.bets;
-    renderCategories();
+    renderFilterRow();
     renderBets();
     updateStats();
   } catch (e) {
@@ -1431,28 +1543,57 @@ async function loadBets() {
 }
 
 function renderCategories() {
+  // old bar hidden, renderFilterRow handles everything now
+}
+
+function renderFilterRow() {
   const cats = ['All', ...new Set(allBets.map(b => b.category))];
-  const bar = document.getElementById('categoryBar');
-  bar.innerHTML = cats.map(c =>
-    `<button class="cat-pill${c === activeCategory ? ' active' : ''}" onclick="filterCategory('${c}')">${c === 'All' ? '🌐 All' : c}</button>`
-  ).join('');
+  const row = document.getElementById('filterRow');
+
+  // Main tabs: All, Nemesis, Rivals
+  let html = '';
+  html += `<button class="tab-pill${viewMode === 'all' ? ' active' : ''}" onclick="setMainTab('all')">🌐 All</button>`;
+  html += `<button class="tab-pill tab-nemesis${viewMode === 'nemesis' ? ' active' : ''}" onclick="setMainTab('nemesis')">🔥 Nemesis</button>`;
+  html += `<button class="tab-pill tab-rivals${viewMode === 'rivals' ? ' active' : ''}" onclick="setMainTab('rivals')">🎯 Rivals</button>`;
+
+  // Divider
+  html += `<div class="tab-divider"></div>`;
+
+  // Category pills (only the dynamic ones, not "All" since the main tabs handle scope)
+  cats.forEach(c => {
+    if (c === 'All') return; // skip — All is the main tab
+    html += `<button class="tab-pill${c === activeCategory ? ' active' : ''}" onclick="filterCategory('${c}')">${c}</button>`;
+  });
+
+  row.innerHTML = html;
 }
 
 function renderBets() {
   const query = document.getElementById('searchInput').value.toLowerCase().trim();
   let filtered = allBets;
 
-  // Filter by view mode
-  if (viewMode === 'mybets') {
-    filtered = filtered.filter(b => myBetsMap[b.id]);
-  } else if (viewMode === 'nemesis') {
-    filtered = []; // Nemesis feature coming soon
+  // Dimension 1: Main tab (who)
+  if (viewMode === 'nemesis') {
+    // Phase 3+: filter to nemesis bets. For now show empty state.
+    filtered = [];
+  } else if (viewMode === 'rivals') {
+    // Phase 3+: filter to rival bets. For now show empty state.
+    filtered = [];
   }
 
+  // Dimension 2: Involvement (my role)
+  if (involvement === 'myplays') {
+    filtered = filtered.filter(b => myBetsMap[b.id]);
+  } else if (involvement === 'created') {
+    filtered = filtered.filter(b => currentUser && b.created_by_user_id === currentUser.id);
+  }
+
+  // Dimension 3: Category
   if (activeCategory !== 'All') {
     filtered = filtered.filter(b => b.category === activeCategory);
   }
 
+  // Search
   if (query) {
     filtered = filtered.filter(b =>
       b.title.toLowerCase().includes(query) ||
@@ -1465,12 +1606,28 @@ function renderBets() {
   const count = document.getElementById('betCount');
   count.textContent = `${filtered.length} bet${filtered.length !== 1 ? 's' : ''}`;
 
+  // Empty states
+  if (viewMode === 'nemesis' && !hasNemeses()) {
+    grid.innerHTML = getNemesisEmptyState();
+    return;
+  }
+  if (viewMode === 'rivals' && !hasRivals()) {
+    grid.innerHTML = getRivalsEmptyState();
+    return;
+  }
   if (filtered.length === 0) {
-    const emptyMsg = viewMode === 'mybets'
-      ? `<div class="no-results"><div class="big-emoji">🎯</div><h3>No bets yet</h3><p>Place your first bet on any market or create your own!</p></div>`
-      : viewMode === 'nemesis'
-      ? `<div class="no-results"><div class="big-emoji">👿</div><h3>Nemesis Bets coming soon</h3><p>Track and challenge your rivals — stay tuned!</p></div>`
-      : `<div class="no-results"><div class="big-emoji">🔍</div><h3>No bets found</h3><p>Try a different search or create a new bet!</p></div>`;
+    let emptyMsg;
+    if (involvement === 'myplays') {
+      emptyMsg = `<div class="no-results"><div class="big-emoji">🎯</div><h3>No plays yet</h3><p>You haven't placed any bets${viewMode !== 'all' ? ' in this view' : ''}. Jump in and pick a side!</p></div>`;
+    } else if (involvement === 'created') {
+      emptyMsg = `<div class="no-results"><div class="big-emoji">✏️</div><h3>No creations yet</h3><p>You haven't created any bets${viewMode !== 'all' ? ' in this view' : ''}. Hit "+ Create Bet" to start!</p></div>`;
+    } else if (viewMode === 'nemesis') {
+      emptyMsg = `<div class="no-results"><div class="big-emoji">🔥</div><h3>No nemesis bets</h3><p>Your nemeses are laying low. No bets match your current filters — they can't hide forever.</p></div>`;
+    } else if (viewMode === 'rivals') {
+      emptyMsg = `<div class="no-results"><div class="big-emoji">🎯</div><h3>No rival bets</h3><p>Your rivals haven't placed bets matching these filters yet. Check back soon.</p></div>`;
+    } else {
+      emptyMsg = `<div class="no-results"><div class="big-emoji">🔍</div><h3>No bets found</h3><p>Try a different search or create a new bet!</p></div>`;
+    }
     grid.innerHTML = emptyMsg;
     return;
   }
@@ -1533,21 +1690,68 @@ function updateStats() {
 }
 
 function filterCategory(cat) {
-  activeCategory = cat;
-  document.getElementById('sectionTitle').textContent = cat === 'All' ? 'All Markets' : cat;
-  renderCategories();
+  activeCategory = (activeCategory === cat) ? 'All' : cat; // toggle off if same
+  renderFilterRow();
+  renderBets();
+}
+
+function setMainTab(tab) {
+  if ((tab === 'nemesis' || tab === 'rivals') && !currentUser) { openLoginModal(); return; }
+  viewMode = tab;
+  activeCategory = 'All'; // reset category when switching main tab
+  renderFilterRow();
+  renderBets();
+}
+
+function setInvolvement(mode) {
+  if ((mode === 'myplays' || mode === 'created') && !currentUser) { openLoginModal(); return; }
+  involvement = mode;
+  document.querySelectorAll('.involvement-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(mode === 'myplays' ? 'invPlays' : mode === 'created' ? 'invCreated' : 'invAll').classList.add('active');
   renderBets();
 }
 
 function resetFilters() {
   viewMode = 'all';
+  involvement = 'everyone';
   activeCategory = 'All';
   document.getElementById('searchInput').value = '';
-  document.getElementById('sectionTitle').textContent = 'All Markets';
-  document.querySelectorAll('.view-filter-btn').forEach(btn => btn.classList.remove('active'));
-  document.getElementById('filterAll').classList.add('active');
-  renderCategories();
+  document.querySelectorAll('.involvement-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('invAll').classList.add('active');
+  renderFilterRow();
   renderBets();
+}
+
+// Placeholder functions for Phase 3+
+function hasNemeses() { return false; }
+function hasRivals() { return false; }
+
+function getNemesisEmptyState() {
+  return `<div class="empty-feature">
+    <div class="ef-icon">⚔️</div>
+    <h3>No Nemeses... Yet</h3>
+    <p>A Nemesis is forged when the rivalry is mutual. Mark someone as a Rival — if they mark you back, it's on.</p>
+    <div class="ef-steps">
+      <div class="ef-step"><span class="ef-step-num">1</span><span>Click on any bet card to see who's playing</span></div>
+      <div class="ef-step"><span class="ef-step-num">2</span><span>Find someone making bold calls and mark them as a Rival</span></div>
+      <div class="ef-step"><span class="ef-step-num">3</span><span>If they rival you back — Nemesis unlocked 🔥</span></div>
+    </div>
+    <button class="ef-cta" onclick="setMainTab('all')">Explore Bets</button>
+  </div>`;
+}
+
+function getRivalsEmptyState() {
+  return `<div class="empty-feature">
+    <div class="ef-icon">🎯</div>
+    <h3>Your Hit List Is Empty</h3>
+    <p>Spot someone making wild predictions? Challenge them. Expand any bet, find them in the player list, and pull the trigger.</p>
+    <div class="ef-steps">
+      <div class="ef-step"><span class="ef-step-num">1</span><span>Browse the markets and click a bet that interests you</span></div>
+      <div class="ef-step"><span class="ef-step-num">2</span><span>Check the Yes and No player lists for worthy opponents</span></div>
+      <div class="ef-step"><span class="ef-step-num">3</span><span>Hit the crosshair icon to mark them as your Rival</span></div>
+    </div>
+    <button class="ef-cta" onclick="setMainTab('all')">Browse Markets</button>
+  </div>`;
 }
 
 async function loadMyBets() {
@@ -1562,17 +1766,9 @@ async function loadMyBets() {
   } catch (e) { /* ignore */ }
 }
 
-function setViewFilter(mode) {
-  if ((mode === 'mybets' || mode === 'nemesis') && !currentUser) { openLoginModal(); return; }
-  viewMode = mode;
-  document.querySelectorAll('.view-filter-btn').forEach(btn => btn.classList.remove('active'));
-  document.getElementById(mode === 'mybets' ? 'filterMine' : mode === 'nemesis' ? 'filterNemesis' : 'filterAll').classList.add('active');
-  renderBets();
-}
-
 function updateViewFiltersVisibility() {
-  const filtersEl = document.getElementById('viewFilters');
-  if (filtersEl) filtersEl.style.display = currentUser ? 'flex' : 'none';
+  const toggle = document.getElementById('involvementToggle');
+  if (toggle) toggle.style.display = currentUser ? 'flex' : 'none';
 }
 
 document.getElementById('searchInput').addEventListener('input', () => {
@@ -1859,7 +2055,7 @@ async function confirmCreateBet() {
     closeModals();
     renderBets();
     updateStats();
-    renderCategories();
+    renderFilterRow();
     showToast(`🎯 Bet created! "${aiValidatedBet.title}"`);
     aiValidatedBet = null;
   } catch (e) {
