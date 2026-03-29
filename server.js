@@ -1053,7 +1053,7 @@ async function handleRequest(req, res) {
   <meta name="twitter:image" content="${ogImage}">
 
   <!-- Redirect to app after crawlers read the meta tags -->
-  <meta http-equiv="refresh" content="0;url=${redirectUrl}">
+  <meta http-equiv="refresh" content="2;url=${redirectUrl}">
   <style>
     body { background: #0a0b0f; color: #e8e8ed; font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
     .loading { text-align: center; }
