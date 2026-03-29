@@ -1,7 +1,7 @@
 {
   "name": "b3tz",
   "version": "1.0.0",
-  "description": "B3tz — Social Prediction Platform",
+  "description": "B3tz — AI-Powered Social Betting Platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

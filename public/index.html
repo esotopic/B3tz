@@ -899,6 +899,40 @@ footer .footer-text {
   color: var(--text-dim);
   margin-bottom: 8px;
 }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.clarify-suggestion {
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.clarify-suggestion:hover {
+  border-color: var(--accent);
+  background: rgba(124,77,255,0.08);
+}
+
+/* Resolved bet styling */
+.bet-card.resolved { opacity: 0.7; }
+.bet-card.resolved .bet-actions { pointer-events: none; opacity: 0.5; }
+.resolution-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+.resolution-badge.yes { background: var(--yes-bg); color: var(--yes); border: 1px solid var(--yes-border); }
+.resolution-badge.no { background: var(--no-bg); color: var(--no); border: 1px solid var(--no-border); }
 </style>
 </head>
 <body>
@@ -996,21 +1030,62 @@ footer .footer-text {
   </div>
 </div>
 
-<!-- Create Bet Modal -->
+<!-- Create Bet Modal (AI-powered) -->
 <div class="modal-overlay" id="createModal">
-  <div class="modal">
+  <div class="modal" style="max-width:520px;">
     <button class="modal-close" onclick="closeModals()">✕</button>
     <h2>Create a Bet</h2>
-    <p>Put something on the line. What do you think is going to happen?</p>
-    <div class="create-modal-content">
-      <label>Your bet</label>
-      <input type="text" class="modal-input" id="newBetTitle" placeholder='e.g. "Spain wins 2026 World Cup"' />
-      <label>Category</label>
-      <input type="text" class="modal-input" id="newBetCategory" placeholder="e.g. Soccer, Tech, Crypto" />
-      <label>Event date</label>
-      <input type="date" class="modal-input" id="newBetDate" />
-      <label>Your position</label>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+
+    <!-- Step 1: Natural language input -->
+    <div id="createStep1">
+      <p style="color:var(--text-dim);font-size:14px;margin-bottom:16px;line-height:1.5;">Describe your bet in plain English. Our AI will validate it and set the rules.</p>
+      <input type="text" class="modal-input" id="newBetInput" placeholder='e.g. "I bet Sanchez wins the Spanish election"' style="font-size:16px;padding:16px;" />
+      <div id="aiError" style="color:var(--no);font-size:13px;margin-top:8px;display:none;"></div>
+      <button class="btn-create-submit" id="aiValidateBtn" onclick="aiValidateBet()">
+        <span id="aiValidateText">Check My Bet</span>
+        <span id="aiSpinner" style="display:none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" style="animation:spin 1s linear infinite;vertical-align:middle;"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="30 70" stroke-linecap="round"/></svg>
+          Thinking...
+        </span>
+      </button>
+    </div>
+
+    <!-- Step 2: AI clarification needed -->
+    <div id="createStepClarify" style="display:none;">
+      <div style="background:rgba(124,77,255,0.1);border:1px solid rgba(124,77,255,0.3);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-weight:600;font-size:14px;margin-bottom:8px;color:var(--accent);">🤖 Quick question</div>
+        <div id="clarifyQuestion" style="color:var(--text);font-size:15px;line-height:1.5;"></div>
+      </div>
+      <div id="clarifySuggestions" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
+      <input type="text" class="modal-input" id="clarifyInput" placeholder="Or type your own answer..." />
+      <button class="btn-create-submit" onclick="aiClarifyBet()">Continue</button>
+      <button class="btn-login" style="width:100%;padding:12px;border-radius:12px;font-size:14px;margin-top:8px;" onclick="resetCreateModal()">Start Over</button>
+    </div>
+
+    <!-- Step 3: Review AI-structured bet -->
+    <div id="createStepReview" style="display:none;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span id="reviewIcon" style="font-size:28px;"></span>
+          <div>
+            <div id="reviewTitle" style="font-weight:700;font-size:17px;color:var(--text);"></div>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+              <span id="reviewCategory" style="font-size:12px;padding:3px 10px;border-radius:100px;background:rgba(124,77,255,0.15);color:var(--accent);font-weight:500;"></span>
+              <span id="reviewDate" style="font-size:12px;padding:3px 10px;border-radius:100px;background:rgba(255,255,255,0.05);color:var(--text-dim);">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+                <span id="reviewDateText"></span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:6px;">Resolution Criteria</div>
+          <div id="reviewCriteria" style="font-size:14px;color:var(--text-dim);line-height:1.6;"></div>
+        </div>
+      </div>
+
+      <label style="font-size:14px;font-weight:600;margin-bottom:8px;display:block;">Your position</label>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
         <button class="bet-btn yes" id="posYes" onclick="selectPosition('yes')" style="border-width:2px;">
           <span class="label">Yes</span>
         </button>
@@ -1018,7 +1093,8 @@ footer .footer-text {
           <span class="label">No</span>
         </button>
       </div>
-      <button class="btn-create-submit" onclick="submitNewBet()">Create Bet</button>
+      <button class="btn-create-submit" onclick="confirmCreateBet()">Confirm & Create Bet</button>
+      <button class="btn-login" style="width:100%;padding:12px;border-radius:12px;font-size:14px;margin-top:8px;" onclick="resetCreateModal()">Start Over</button>
     </div>
   </div>
 </div>
@@ -1298,30 +1374,36 @@ function renderBets() {
     return;
   }
 
-  grid.innerHTML = filtered.map(bet => `
-    <div class="bet-card${bet.featured ? ' featured' : ''}">
+  grid.innerHTML = filtered.map(bet => {
+    const isResolved = bet.status === 'resolved';
+    const resolutionBadge = isResolved
+      ? `<span class="resolution-badge ${bet.resolution}">${bet.resolution === 'yes' ? '✓ YES' : '✕ NO'}</span>`
+      : '';
+    return `
+    <div class="bet-card${bet.featured ? ' featured' : ''}${isResolved ? ' resolved' : ''}" title="${bet.resolution_criteria ? bet.resolution_criteria.replace(/"/g, '&quot;') : ''}">
       <div class="card-top">
         <div class="card-icon">${bet.icon}</div>
         <div class="card-info">
-          <div class="card-title">${bet.title}</div>
+          <div class="card-title">${bet.title} ${resolutionBadge}</div>
           <div class="card-meta">
             <span class="cat-tag">${bet.category}</span>
             <span class="date-tag">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              ${formatDate(bet.event_date)}
+              ${bet.event_date ? formatDate(bet.event_date) : 'TBD'}
             </span>
           </div>
         </div>
       </div>
+      ${isResolved && bet.resolution_reason ? `<div style="font-size:12px;color:var(--text-muted);padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:8px;line-height:1.5;">${bet.resolution_reason}</div>` : ''}
       <div class="odds-bar">
         <div class="odds-fill" style="width: ${bet.yes_odds}%"></div>
       </div>
       <div class="bet-actions">
-        <button class="bet-btn yes" onclick="event.stopPropagation(); handleBet(${bet.id}, 'yes')">
+        <button class="bet-btn yes" onclick="event.stopPropagation(); handleBet(${bet.id}, 'yes')" ${isResolved ? 'disabled' : ''}>
           <span class="pct">${bet.yes_odds}%</span>
           <span class="label">Yes</span>
         </button>
-        <button class="bet-btn no" onclick="event.stopPropagation(); handleBet(${bet.id}, 'no')">
+        <button class="bet-btn no" onclick="event.stopPropagation(); handleBet(${bet.id}, 'no')" ${isResolved ? 'disabled' : ''}>
           <span class="pct">${bet.no_odds}%</span>
           <span class="label">No</span>
         </button>
@@ -1334,7 +1416,7 @@ function renderBets() {
         <span class="bettors">${(bet.yes_count + bet.no_count).toLocaleString()} bets</span>
       </div>
     </div>
-  `).join('');
+  `;}).join('');
 }
 
 function updateStats() {
@@ -1439,7 +1521,9 @@ function placeBet() {
   pendingBet = null;
 }
 
-// ── Create bet ──
+// ── AI-powered bet creation ──
+let aiValidatedBet = null; // stores the AI-structured bet waiting for confirmation
+
 function selectPosition(pos) {
   selectedPosition = pos;
   document.getElementById('posYes').style.borderWidth = pos === 'yes' ? '2px' : '1px';
@@ -1453,46 +1537,172 @@ function openCreateModal() {
     openLoginModal();
     return;
   }
+  resetCreateModal();
   document.getElementById('createModal').classList.add('active');
-  selectPosition('yes');
 }
 
-function submitNewBet() {
-  const title = document.getElementById('newBetTitle').value.trim();
-  const category = document.getElementById('newBetCategory').value.trim() || 'General';
-  const date = document.getElementById('newBetDate').value;
+function resetCreateModal() {
+  aiValidatedBet = null;
+  document.getElementById('createStep1').style.display = 'block';
+  document.getElementById('createStepClarify').style.display = 'none';
+  document.getElementById('createStepReview').style.display = 'none';
+  document.getElementById('newBetInput').value = '';
+  document.getElementById('aiError').style.display = 'none';
+  document.getElementById('aiValidateText').style.display = 'inline';
+  document.getElementById('aiSpinner').style.display = 'none';
+  document.getElementById('aiValidateBtn').disabled = false;
+}
 
-  if (!title) {
-    document.getElementById('newBetTitle').style.borderColor = 'var(--no)';
+async function aiValidateBet() {
+  const input = document.getElementById('newBetInput').value.trim();
+  const errorEl = document.getElementById('aiError');
+  const btn = document.getElementById('aiValidateBtn');
+
+  if (!input || input.length < 5) {
+    errorEl.textContent = 'Tell us what you think is going to happen — be specific!';
+    errorEl.style.display = 'block';
     return;
   }
 
-  const newBet = {
-    id: allBets.length + 1,
-    title,
-    category,
-    event_date: date || '2026-12-31',
-    created_by: currentUser ? currentUser.displayName : 'Anonymous',
-    yes_odds: selectedPosition === 'yes' ? 55 : 45,
-    no_odds: selectedPosition === 'yes' ? 45 : 55,
-    yes_count: selectedPosition === 'yes' ? 1 : 0,
-    no_count: selectedPosition === 'no' ? 1 : 0,
-    volume: 0,
-    status: 'open',
-    icon: getCategoryIcon(category),
-    featured: false
-  };
+  errorEl.style.display = 'none';
+  document.getElementById('aiValidateText').style.display = 'none';
+  document.getElementById('aiSpinner').style.display = 'inline';
+  btn.disabled = true;
 
-  allBets.unshift(newBet);
-  closeModals();
-  renderBets();
-  updateStats();
-  showToast(`🎯 Bet created! "${title}"`);
+  try {
+    const res = await fetch('/api/ai/validate-bet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input })
+    });
+    const data = await res.json();
 
-  document.getElementById('newBetTitle').value = '';
-  document.getElementById('newBetCategory').value = '';
-  document.getElementById('newBetDate').value = '';
+    if (!res.ok) {
+      errorEl.textContent = data.error || 'Something went wrong. Try again.';
+      errorEl.style.display = 'block';
+      document.getElementById('aiValidateText').style.display = 'inline';
+      document.getElementById('aiSpinner').style.display = 'none';
+      btn.disabled = false;
+      return;
+    }
+
+    const result = data.result;
+
+    if (result.status === 'valid') {
+      // Show review step
+      aiValidatedBet = result;
+      aiValidatedBet.original_input = input;
+      showReviewStep(result);
+    } else if (result.status === 'clarify') {
+      // Show clarification step
+      showClarifyStep(result, input);
+    } else if (result.status === 'invalid') {
+      errorEl.textContent = result.reason || 'This doesn't look like a valid bet.';
+      errorEl.style.display = 'block';
+    }
+  } catch (e) {
+    errorEl.textContent = 'Network error. Please try again.';
+    errorEl.style.display = 'block';
+  }
+
+  document.getElementById('aiValidateText').style.display = 'inline';
+  document.getElementById('aiSpinner').style.display = 'none';
+  btn.disabled = false;
 }
+
+function showClarifyStep(result, originalInput) {
+  document.getElementById('createStep1').style.display = 'none';
+  document.getElementById('createStepClarify').style.display = 'block';
+  document.getElementById('clarifyQuestion').textContent = result.question;
+
+  const sugBox = document.getElementById('clarifySuggestions');
+  sugBox.innerHTML = '';
+  if (result.suggestions && result.suggestions.length > 0) {
+    result.suggestions.forEach(sug => {
+      const btn = document.createElement('button');
+      btn.className = 'clarify-suggestion';
+      btn.textContent = sug;
+      btn.onclick = () => {
+        document.getElementById('clarifyInput').value = sug;
+        aiClarifyBet();
+      };
+      sugBox.appendChild(btn);
+    });
+  }
+
+  // Store original input for re-validation with clarification
+  document.getElementById('clarifyInput').dataset.original = originalInput;
+}
+
+async function aiClarifyBet() {
+  const clarification = document.getElementById('clarifyInput').value.trim();
+  const original = document.getElementById('clarifyInput').dataset.original || '';
+
+  if (!clarification) return;
+
+  // Re-validate with the clarification added
+  document.getElementById('createStepClarify').style.display = 'none';
+  document.getElementById('createStep1').style.display = 'block';
+  document.getElementById('newBetInput').value = original + ' — ' + clarification;
+  aiValidateBet();
+}
+
+function showReviewStep(result) {
+  document.getElementById('createStep1').style.display = 'none';
+  document.getElementById('createStepClarify').style.display = 'none';
+  document.getElementById('createStepReview').style.display = 'block';
+
+  document.getElementById('reviewIcon').textContent = result.icon || '🎲';
+  document.getElementById('reviewTitle').textContent = result.title;
+  document.getElementById('reviewCategory').textContent = result.category;
+  document.getElementById('reviewDateText').textContent = result.event_date ? formatDate(result.event_date) : 'When event occurs';
+  document.getElementById('reviewCriteria').textContent = result.resolution_criteria;
+
+  selectedPosition = 'yes';
+  selectPosition('yes');
+}
+
+async function confirmCreateBet() {
+  if (!aiValidatedBet) return;
+
+  try {
+    const res = await fetch('/api/bets/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: aiValidatedBet.title,
+        category: aiValidatedBet.category,
+        icon: aiValidatedBet.icon,
+        event_date: aiValidatedBet.event_date,
+        resolution_criteria: aiValidatedBet.resolution_criteria,
+        original_input: aiValidatedBet.original_input,
+        position: selectedPosition
+      })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast(data.error || 'Failed to create bet');
+      return;
+    }
+
+    // Add to local list and refresh
+    allBets.unshift(data.bet);
+    closeModals();
+    renderBets();
+    updateStats();
+    renderCategories();
+    showToast(`🎯 Bet created! "${aiValidatedBet.title}"`);
+    aiValidatedBet = null;
+  } catch (e) {
+    showToast('Network error creating bet');
+  }
+}
+
+// Allow Enter key in create bet input
+document.getElementById('newBetInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') aiValidateBet();
+});
 
 function getCategoryIcon(cat) {
   const icons = {
