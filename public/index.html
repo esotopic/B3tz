@@ -441,6 +441,171 @@ header {
 .h2h-side.yes { background: var(--yes-bg); color: var(--yes); }
 .h2h-side.no { background: var(--no-bg); color: var(--no); }
 
+/* ═══ NEMESIS PROFILE VIEW ═══ */
+#nemesisView {
+  display: none;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+  min-height: 80vh;
+}
+#nemesisView.active { display: block; }
+
+.nem-profile-header {
+  margin-top: 24px;
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.nem-profile-header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ff4081, #7c4dff, #ffd740);
+}
+.nem-profile-top {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.nem-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 800;
+  background: rgba(255,64,129,0.15);
+  color: #ff4081;
+  border: 3px solid rgba(255,64,129,0.3);
+  flex-shrink: 0;
+}
+.nem-info h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nem-info h2 .nem-badge {
+  font-size: 11px;
+  font-family: 'Inter', sans-serif;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(255,64,129,0.12);
+  color: #ff4081;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.nem-info .nem-sub {
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-top: 4px;
+}
+.nem-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+.nem-stat-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+.nem-stat-val {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.nem-stat-val.win { color: var(--yes); }
+.nem-stat-val.loss { color: var(--no); }
+.nem-stat-val.fire { color: #ff4081; }
+.nem-stat-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 6px;
+  font-weight: 500;
+}
+.nem-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 4px;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+.nem-back:hover { color: var(--text); }
+
+.nem-filter-section {
+  margin-top: 20px;
+}
+.nem-search-bar {
+  max-width: 480px;
+  position: relative;
+  margin-bottom: 16px;
+}
+.nem-search-bar svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+}
+.nem-search-bar input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.nem-search-bar input:focus {
+  border-color: var(--border-hover);
+}
+.nem-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.nem-bet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+@media (max-width: 768px) {
+  .nem-profile-top { flex-direction: column; text-align: center; }
+  .nem-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .nem-bet-grid { grid-template-columns: 1fr; }
+  .nem-info h2 { justify-content: center; }
+}
+
 /* ═══ OLD .categories compat ═══ */
 .categories { display: none; }
 
@@ -1837,6 +2002,23 @@ footer .footer-text {
   </div>
 </div>
 
+<!-- ═══ NEMESIS PROFILE VIEW ═══ -->
+<div id="nemesisView">
+  <button class="nem-back" onclick="navigateHome()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    Back to bets
+  </button>
+  <div id="nemProfileHeader"></div>
+  <div class="nem-filter-section">
+    <div class="nem-search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" id="nemSearchInput" placeholder="Search nemesis bets..." autocomplete="off">
+    </div>
+    <div class="nem-filter-row" id="nemFilterRow"></div>
+    <div class="nem-bet-grid" id="nemBetGrid"></div>
+  </div>
+</div>
+
 <footer>
   <div class="footer-inner">
     <div class="footer-logo">B3TZ</div>
@@ -2501,8 +2683,9 @@ function showDetailView(betId) {
   activePlayerSide = 'yes';
   activeDetailTab = 'overview';
 
-  // Hide home, show detail
+  // Hide home & nemesis, show detail
   document.getElementById('homeView').style.display = 'none';
+  document.getElementById('nemesisView').classList.remove('active');
   document.getElementById('detailView').classList.add('active');
   window.scrollTo(0, 0);
 
@@ -2602,9 +2785,12 @@ function showDetailView(betId) {
 
 function showHomeView() {
   document.getElementById('detailView').classList.remove('active');
+  document.getElementById('nemesisView').classList.remove('active');
   document.getElementById('homeView').style.display = '';
   detailBetId = null;
   activeChallengeCode = null;
+  nemesisProfileId = null;
+  nemesisProfileData = null;
 }
 
 // Hash routing
@@ -2612,18 +2798,24 @@ let activeChallengeCode = null;
 
 function handleHashChange() {
   const hash = window.location.hash;
-  const match = hash.match(/^#bet\/(\d+)(\?.*)?$/);
-  if (match) {
-    const betId = parseInt(match[1]);
-    // Parse challenge code from hash params
-    const params = new URLSearchParams(match[2] ? match[2].substring(1) : '');
+  const betMatch = hash.match(/^#bet\/(\d+)(\?.*)?$/);
+  const nemMatch = hash.match(/^#nemesis\/(\d+)$/);
+  if (betMatch) {
+    const betId = parseInt(betMatch[1]);
+    const params = new URLSearchParams(betMatch[2] ? betMatch[2].substring(1) : '');
     if (params.get('challenge')) {
       activeChallengeCode = params.get('challenge');
     }
+    hideNemesisView();
     if (allBets.length > 0) {
       showDetailView(betId);
+    }
+  } else if (nemMatch) {
+    const rivalId = parseInt(nemMatch[1]);
+    if (currentUser) {
+      showNemesisProfile(rivalId);
     } else {
-      // Bets not loaded yet, will be handled after loadBets
+      navigateHome();
     }
   } else {
     showHomeView();
@@ -2695,8 +2887,11 @@ function renderPlayersList() {
       ? `<button class="btn-mark-rival${isRiv ? ' active' : ''}" onclick="event.stopPropagation();toggleRival(${v.id},'${(v.displayName || v.username).replace(/'/g, "\\'")}')" title="${isRiv ? 'Remove rival' : 'Mark as rival'}">${rivalLabel}</button>`
       : '';
     const nemBadge = isNem ? '<span class="player-badge rival" style="background:rgba(255,64,129,0.12);color:#ff4081;">NEMESIS</span>' : isRiv ? '<span class="player-badge rival">RIVAL</span>' : '';
+    const clickAction = (!isYou && currentUser)
+      ? (isNem ? `window.location.hash='nemesis/${v.id}'` : `openH2H(${v.id})`)
+      : '';
     return `
-      <div class="player-row" ${(!isYou && currentUser) ? `style="cursor:pointer" onclick="openH2H(${v.id})"` : ''}>
+      <div class="player-row" ${clickAction ? `style="cursor:pointer" onclick="${clickAction}"` : ''}>
         <div class="player-avatar ${side}-avatar">${initial}</div>
         <div class="player-info">
           <div class="player-name">${v.displayName || v.username} ${nemBadge}</div>
@@ -2893,8 +3088,11 @@ function renderAvatarRow() {
     const badge = isNem
       ? '<span class="avatar-chip-badge badge-nemesis">NEMESIS</span>'
       : '<span class="avatar-chip-badge badge-rival">RIVAL</span>';
+    const clickAction = isNem
+      ? `window.location.hash='nemesis/${r.id}'`
+      : `openH2H(${r.id})`;
     return `
-      <div class="${chipClass}" onclick="openH2H(${r.id})">
+      <div class="${chipClass}" onclick="${clickAction}">
         <div class="avatar-chip-img">${initial}</div>
         <div class="avatar-chip-info">
           <div class="avatar-chip-name">${r.displayName || r.username}${badge}</div>
@@ -2957,6 +3155,158 @@ async function openH2H(rivalId) {
     document.getElementById('h2hContent').innerHTML = '<div style="text-align:center;padding:20px;color:var(--no)">Failed to load head-to-head stats</div>';
   }
 }
+
+// ═══ NEMESIS PROFILE VIEW ═══
+let nemesisProfileId = null;
+let nemesisProfileData = null;
+let nemesisCategory = 'All';
+let nemesisViewMode = 'all'; // 'all' or 'history'
+
+async function showNemesisProfile(rivalId) {
+  nemesisProfileId = rivalId;
+  nemesisCategory = 'All';
+  nemesisViewMode = 'all';
+
+  // Hide home & detail, show nemesis view
+  document.getElementById('homeView').style.display = 'none';
+  document.getElementById('detailView').classList.remove('active');
+  document.getElementById('nemesisView').classList.add('active');
+  window.scrollTo(0, 0);
+
+  // Set loading state
+  document.getElementById('nemProfileHeader').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim)">Loading nemesis profile...</div>';
+  document.getElementById('nemBetGrid').innerHTML = '';
+  document.getElementById('nemFilterRow').innerHTML = '';
+
+  try {
+    const res = await fetch(`/api/h2h/${rivalId}`, { credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    nemesisProfileData = data;
+
+    const r = data.rival;
+    const s = data.stats;
+    const initial = (r.displayName || r.username || '?')[0].toUpperCase();
+    const isNem = isNemesis(rivalId);
+    const statusLabel = isNem ? '🔥 NEMESIS' : '🎯 RIVAL';
+    const record = `${s.myWins}W - ${s.theirWins}L - ${s.ties}T`;
+
+    document.getElementById('nemProfileHeader').innerHTML = `
+      <div class="nem-profile-header">
+        <div class="nem-profile-top">
+          <div class="nem-avatar">${initial}</div>
+          <div class="nem-info">
+            <h2>${r.displayName || r.username} <span class="nem-badge">${statusLabel}</span></h2>
+            <div class="nem-sub">Record: ${record} &middot; ${s.sharedBets} shared bet${s.sharedBets !== 1 ? 's' : ''} &middot; ${s.opposing} opposing pick${s.opposing !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+        <div class="nem-stats-grid">
+          <div class="nem-stat-card"><div class="nem-stat-val fire">${s.sharedBets}</div><div class="nem-stat-label">Shared Bets</div></div>
+          <div class="nem-stat-card"><div class="nem-stat-val">${s.opposing}</div><div class="nem-stat-label">Opposing Picks</div></div>
+          <div class="nem-stat-card"><div class="nem-stat-val win">${s.myWins}</div><div class="nem-stat-label">Your Wins</div></div>
+          <div class="nem-stat-card"><div class="nem-stat-val loss">${s.theirWins}</div><div class="nem-stat-label">Their Wins</div></div>
+          <div class="nem-stat-card"><div class="nem-stat-val">${s.ties}</div><div class="nem-stat-label">Ties</div></div>
+          <div class="nem-stat-card"><div class="nem-stat-val">${s.opposing > 0 ? Math.round((s.myWins / s.opposing) * 100) : 0}%</div><div class="nem-stat-label">Win Rate</div></div>
+        </div>
+      </div>
+    `;
+
+    renderNemesisFilters();
+    renderNemesisBets();
+  } catch (e) {
+    document.getElementById('nemProfileHeader').innerHTML = '<div style="text-align:center;padding:40px;color:var(--no)">Failed to load nemesis profile</div>';
+  }
+}
+
+function hideNemesisView() {
+  document.getElementById('nemesisView').classList.remove('active');
+  nemesisProfileId = null;
+  nemesisProfileData = null;
+}
+
+function getNemesisSharedBetIds() {
+  if (!nemesisProfileData || !nemesisProfileData.bets) return new Set();
+  return new Set(nemesisProfileData.bets.map(b => b.betId));
+}
+
+function getFilteredNemesisBets() {
+  const sharedIds = getNemesisSharedBetIds();
+  let filtered = allBets.filter(b => sharedIds.has(b.id));
+
+  // View mode: history shows resolved, all shows open
+  if (nemesisViewMode === 'history') {
+    filtered = filtered.filter(b => b.status === 'resolved');
+  } else {
+    filtered = filtered.filter(b => b.status !== 'resolved');
+  }
+
+  // Category filter
+  if (nemesisCategory !== 'All') {
+    filtered = filtered.filter(b => b.category === nemesisCategory);
+  }
+
+  // Search
+  const query = document.getElementById('nemSearchInput') ? document.getElementById('nemSearchInput').value.toLowerCase().trim() : '';
+  if (query) {
+    filtered = filtered.filter(b =>
+      b.title.toLowerCase().includes(query) ||
+      b.category.toLowerCase().includes(query)
+    );
+  }
+
+  // Sort by event date
+  filtered.sort((a, b) => eventDateToTs(a.event_date) - eventDateToTs(b.event_date));
+  return filtered;
+}
+
+function renderNemesisFilters() {
+  const sharedIds = getNemesisSharedBetIds();
+  const nemBets = allBets.filter(b => sharedIds.has(b.id));
+  const cats = [...new Set(nemBets.map(b => b.category))];
+
+  let html = '';
+  // History toggle
+  html += `<button class="tab-pill${nemesisViewMode === 'history' ? ' active' : ''}" onclick="toggleNemesisHistory()">📜 History</button>`;
+  html += `<div class="tab-divider"></div>`;
+  // All + categories
+  html += `<button class="tab-pill${nemesisCategory === 'All' ? ' active' : ''}" onclick="filterNemesisCategory('All')">All</button>`;
+  cats.forEach(c => {
+    html += `<button class="tab-pill${c === nemesisCategory ? ' active' : ''}" onclick="filterNemesisCategory('${c}')">${c}</button>`;
+  });
+  document.getElementById('nemFilterRow').innerHTML = html;
+}
+
+function filterNemesisCategory(cat) {
+  nemesisCategory = cat;
+  renderNemesisFilters();
+  renderNemesisBets();
+}
+
+function toggleNemesisHistory() {
+  nemesisViewMode = nemesisViewMode === 'history' ? 'all' : 'history';
+  renderNemesisFilters();
+  renderNemesisBets();
+}
+
+function renderNemesisBets() {
+  const filtered = getFilteredNemesisBets();
+  const grid = document.getElementById('nemBetGrid');
+
+  if (filtered.length === 0) {
+    const msg = nemesisViewMode === 'history'
+      ? 'No resolved bets with this nemesis yet.'
+      : 'No open bets with this nemesis right now.';
+    grid.innerHTML = `<div class="no-results" style="grid-column:1/-1;"><div class="big-emoji">🔥</div><h3>Nothing here</h3><p>${msg}</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(renderBetCard).join('');
+}
+
+// Wire up nemesis search
+document.getElementById('nemSearchInput').addEventListener('input', () => {
+  renderNemesisBets();
+});
 
 function getNemesisEmptyState() {
   return `<div class="empty-feature">
