@@ -1171,6 +1171,42 @@ async function handleRequest(req, res) {
   }
 
   // ══════════════════════════════════════
+  // ── API: Rival Bet IDs (for filter) ──
+  // ══════════════════════════════════════
+
+  if (pathname === '/api/rival-bet-ids' && req.method === 'GET') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in' });
+    const userId = user.Id || user.id;
+
+    if (dbPool) {
+      try {
+        // Get bet IDs where any of the user's rivals have also placed bets
+        const result = await dbPool.request()
+          .input('userId', sql.Int, userId)
+          .query(`
+            SELECT DISTINCT ub.BetId, ub.UserId AS RivalUserId
+            FROM B3tz_Rivals r
+            JOIN B3tz_UserBets ub ON ub.UserId = r.RivalUserId
+            WHERE r.UserId = @userId
+          `);
+        // Build a map: betId -> [rivalUserIds]
+        const betRivals = {};
+        for (const row of result.recordset) {
+          if (!betRivals[row.BetId]) betRivals[row.BetId] = [];
+          betRivals[row.BetId].push(row.RivalUserId);
+        }
+        return sendJSON(res, 200, { betRivals });
+      } catch (e) {
+        console.error('Rival bet IDs error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to load rival bet IDs' });
+      }
+    } else {
+      return sendJSON(res, 200, { betRivals: {} });
+    }
+  }
+
+  // ══════════════════════════════════════
   // ── API: Head-to-Head Stats ──
   // ══════════════════════════════════════
 

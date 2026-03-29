@@ -1807,6 +1807,7 @@ let selectedPosition = 'yes';
 let currentUser = null;
 let myBetsMap = {}; // { betId: 'yes'|'no' }
 let myRivals = []; // loaded from /api/rivals
+let rivalBetMap = {}; // betId -> [rivalUserIds], loaded from /api/rival-bet-ids
 let viewMode = 'all'; // 'all', 'nemesis', 'rivals'
 let involvement = 'everyone'; // 'everyone', 'myplays', 'created'
 
@@ -2076,15 +2077,17 @@ function renderBets() {
     // Filter to bets where a nemesis (mutual rival) also placed a bet
     const nemIds = new Set(myRivals.filter(r => r.isMutual).map(r => r.id));
     filtered = filtered.filter(b => {
-      // Include bets where current user has a bet AND a nemesis might also bet
-      // For now, include all bets if user has nemeses — we'll refine with voter data
-      return myBetsMap[b.id] && nemIds.size > 0;
+      const rivals = rivalBetMap[b.id];
+      if (!rivals) return false;
+      return rivals.some(rid => nemIds.has(rid));
     });
   } else if (viewMode === 'rivals') {
-    // Filter to bets where user has placed a bet (rival context)
+    // Filter to bets where any rival also placed a bet
     const rivIds = new Set(myRivals.map(r => r.id));
     filtered = filtered.filter(b => {
-      return myBetsMap[b.id] && rivIds.size > 0;
+      const rivals = rivalBetMap[b.id];
+      if (!rivals) return false;
+      return rivals.some(rid => rivIds.has(rid));
     });
   }
 
@@ -2524,11 +2527,16 @@ function isRival(userId) { return myRivals.some(r => r.id === userId); }
 function isNemesis(userId) { return myRivals.some(r => r.id === userId && r.isMutual); }
 
 async function loadRivals() {
-  if (!currentUser) { myRivals = []; return; }
+  if (!currentUser) { myRivals = []; rivalBetMap = {}; return; }
   try {
-    const res = await fetch('/api/rivals', { credentials: 'include' });
-    const data = await res.json();
-    if (data.rivals) myRivals = data.rivals;
+    const [rivRes, rbRes] = await Promise.all([
+      fetch('/api/rivals', { credentials: 'include' }),
+      fetch('/api/rival-bet-ids', { credentials: 'include' })
+    ]);
+    const rivData = await rivRes.json();
+    if (rivData.rivals) myRivals = rivData.rivals;
+    const rbData = await rbRes.json();
+    if (rbData.betRivals) rivalBetMap = rbData.betRivals;
   } catch (e) { /* ignore */ }
 }
 
