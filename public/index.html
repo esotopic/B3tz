@@ -606,6 +606,268 @@ header {
   .nem-info h2 { justify-content: center; }
 }
 
+/* ═══ LEADERBOARD VIEW ═══ */
+#leaderboardView {
+  display: none;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+  min-height: 80vh;
+}
+#leaderboardView.active { display: block; }
+
+.lb-header {
+  text-align: center;
+  padding: 40px 0 32px;
+}
+.lb-header h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  background: linear-gradient(135deg, #7c4dff, #ffd740);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.lb-header p {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0;
+}
+.lb-tabs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.lb-tab {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 8px 18px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lb-tab:hover { background: rgba(255,255,255,0.08); color: white; }
+.lb-tab.active {
+  background: linear-gradient(135deg, rgba(124,77,255,0.25), rgba(124,77,255,0.1));
+  border-color: rgba(124,77,255,0.4);
+  color: white;
+}
+
+/* Podium - top 3 */
+.lb-podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding: 0 20px;
+}
+.lb-podium-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px 20px 20px;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s;
+  flex: 1;
+  max-width: 220px;
+}
+.lb-podium-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-hover);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+.lb-podium-card.gold {
+  border-color: rgba(255,215,64,0.3);
+  background: linear-gradient(180deg, rgba(255,215,64,0.08), var(--card));
+  order: 2;
+  padding-top: 32px;
+}
+.lb-podium-card.silver {
+  border-color: rgba(192,192,192,0.2);
+  background: linear-gradient(180deg, rgba(192,192,192,0.06), var(--card));
+  order: 1;
+}
+.lb-podium-card.bronze {
+  border-color: rgba(205,127,50,0.2);
+  background: linear-gradient(180deg, rgba(205,127,50,0.06), var(--card));
+  order: 3;
+}
+.lb-rank-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 auto 12px;
+}
+.gold .lb-rank-badge { background: linear-gradient(135deg, #ffd740, #ffab00); color: #1a1a2e; font-size: 22px; width: 44px; height: 44px; }
+.silver .lb-rank-badge { background: linear-gradient(135deg, #e0e0e0, #9e9e9e); color: #1a1a2e; }
+.bronze .lb-rank-badge { background: linear-gradient(135deg, #cd7f32, #a0522d); color: white; }
+.lb-podium-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: white;
+  margin: 0 auto 8px;
+  background: linear-gradient(135deg, #7c4dff, #448aff);
+}
+.gold .lb-podium-avatar { width: 68px; height: 68px; font-size: 26px; }
+.lb-podium-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: white;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lb-podium-score {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffd740;
+  margin-bottom: 4px;
+}
+.gold .lb-podium-score { font-size: 30px; }
+.lb-podium-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.lb-podium-sig {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Table for rest of players */
+.lb-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+}
+.lb-table-row {
+  background: var(--card);
+  border-radius: 12px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.lb-table-row:hover {
+  background: var(--card-hover);
+  transform: translateX(4px);
+}
+.lb-table-row.is-me {
+  background: #353852;
+  border-left: 3px solid rgba(124,77,255,0.7);
+}
+.lb-table-row td {
+  padding: 14px 16px;
+  font-size: 14px;
+  vertical-align: middle;
+}
+.lb-table-row td:first-child {
+  border-radius: 12px 0 0 12px;
+  width: 50px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.lb-table-row td:last-child {
+  border-radius: 0 12px 12px 0;
+}
+.lb-player-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.lb-player-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #7c4dff, #448aff);
+  flex-shrink: 0;
+}
+.lb-player-name {
+  font-weight: 600;
+  color: white;
+}
+.lb-player-sig {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.lb-score-cell {
+  font-weight: 700;
+  color: #ffd740;
+  font-size: 16px;
+}
+.lb-stat-cell {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.lb-stat-cell .win { color: #00e676; }
+.lb-stat-cell .loss { color: #ff5252; }
+.lb-wr-bar {
+  width: 60px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.06);
+  display: inline-block;
+  position: relative;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.lb-wr-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #00e676;
+}
+
+.lb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 12px 0;
+  transition: color 0.2s;
+}
+.lb-back:hover { color: white; }
+
+@media (max-width: 640px) {
+  .lb-podium { flex-direction: column; align-items: center; }
+  .lb-podium-card { order: unset !important; max-width: 280px; width: 100%; }
+  .lb-table-row td { padding: 10px 8px; font-size: 13px; }
+  .lb-stat-cell { display: none; }
+}
+
 /* ═══ OLD .categories compat ═══ */
 .categories { display: none; }
 
@@ -2021,6 +2283,20 @@ footer .footer-text {
   </div>
 </div>
 
+<!-- ═══ LEADERBOARD VIEW ═══ -->
+<div id="leaderboardView">
+  <button class="lb-back" onclick="navigateHome()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    Back to bets
+  </button>
+  <div class="lb-header">
+    <h2>The Oracle Board</h2>
+    <p>Who sees the future? B3tz Score ranks accuracy, volume, rivalries, and boldness.</p>
+  </div>
+  <div class="lb-tabs" id="lbTabs"></div>
+  <div id="lbContent"></div>
+</div>
+
 <footer>
   <div class="footer-inner">
     <div class="footer-logo">B3TZ</div>
@@ -2423,6 +2699,7 @@ function renderFilterRow() {
     html += `<button class="tab-pill tab-nemesis${viewMode === 'nemesis' ? ' active' : ''}" onclick="setMainTab('nemesis')">🔥 Nemesis</button>`;
     html += `<button class="tab-pill tab-rivals${viewMode === 'rivals' ? ' active' : ''}" onclick="setMainTab('rivals')">🎯 Rivals</button>`;
     html += `<button class="tab-pill${viewMode === 'history' ? ' active' : ''}" onclick="setMainTab('history')">📜 History</button>`;
+    html += `<button class="tab-pill${viewMode === 'leaderboard' ? ' active' : ''}" onclick="window.location.hash='leaderboard'">🏆 Leaderboard</button>`;
     html += `<div class="tab-divider"></div>`;
   }
 
@@ -2686,6 +2963,21 @@ function showDetailView(betId) {
     loadChallengeInfo(activeChallengeCode);
   } else {
     banner.style.display = 'none';
+  }
+
+  // Reset action panel structure (placeBet confirmation destroys inner elements)
+  const actionPanel = document.querySelector('.detail-action');
+  if (actionPanel && !document.getElementById('dActionOdds')) {
+    actionPanel.innerHTML = `
+      <div class="action-title">Place Your Bet</div>
+      <div class="action-odds" id="dActionOdds"></div>
+      <div class="action-info" id="dActionInfo"></div>
+      <div class="challenge-divider"></div>
+      <button class="btn-challenge" id="btnChallenge" onclick="challengeFriend()">
+        <span style="font-size:20px;">⚔️</span>
+        Challenge a Friend
+      </button>
+    `;
   }
 
   // Show/hide challenge button (only if logged in)
