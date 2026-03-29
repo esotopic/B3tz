@@ -307,11 +307,59 @@ function callClaudeAPI(messages, systemPrompt, tools) {
   });
 }
 
-// Simple web search via a fetch to a search API
+// Web search via DuckDuckGo HTML — returns actual search result snippets
 function webSearch(query) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const encodedQuery = encodeURIComponent(query);
-    // Use DuckDuckGo instant answer API for quick factual lookups
+    const options = {
+      hostname: 'html.duckduckgo.com',
+      path: `/html/?q=${encodedQuery}`,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html',
+        'Accept-Language': 'en-US,en;q=0.9'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; if (data.length > 200000) res.destroy(); });
+      res.on('end', () => {
+        try {
+          // Parse HTML results — extract titles and snippets
+          const results = [];
+          // Match result blocks: <a class="result__a" ...>TITLE</a> and <a class="result__snippet" ...>SNIPPET</a>
+          const titleRegex = /<a[^>]*class="result__a"[^>]*>([\s\S]*?)<\/a>/gi;
+          const snippetRegex = /<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi;
+
+          const titles = [];
+          const snippets = [];
+          let m;
+          while ((m = titleRegex.exec(data)) !== null) titles.push(m[1].replace(/<[^>]+>/g, '').trim());
+          while ((m = snippetRegex.exec(data)) !== null) snippets.push(m[1].replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&nbsp;/g, ' ').trim());
+
+          for (let i = 0; i < Math.min(titles.length, snippets.length, 8); i++) {
+            results.push({ title: titles[i], snippet: snippets[i] });
+          }
+
+          resolve({ results, raw: data.length });
+        } catch (e) {
+          resolve({ results: [], raw: 0 });
+        }
+      });
+    });
+
+    req.on('error', () => resolve({ results: [], raw: 0 }));
+    req.setTimeout(12000, () => { req.destroy(); resolve({ results: [], raw: 0 }); });
+    req.end();
+  });
+}
+
+// Also keep the instant answer API as a supplementary source
+function webSearchInstant(query) {
+  return new Promise((resolve) => {
+    const encodedQuery = encodeURIComponent(query);
     const options = {
       hostname: 'api.duckduckgo.com',
       path: `/?q=${encodedQuery}&format=json&no_redirect=1&no_html=1`,
@@ -323,12 +371,8 @@ function webSearch(query) {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          resolve(parsed);
-        } catch (e) {
-          resolve({ Abstract: '', Results: [] });
-        }
+        try { resolve(JSON.parse(data)); }
+        catch (e) { resolve({ Abstract: '', Results: [] }); }
       });
     });
 
@@ -546,53 +590,68 @@ No markdown.`;
 async function arbitrateBetWithAI(bet) {
   const today = new Date().toISOString().split('T')[0];
 
-  // Step 1: Do web research on the bet topic
+  // Step 1: Do web research with MULTIPLE search strategies
+  // Generate good search queries — include score/result terms for sports
   const searchQueries = [
-    bet.Title + ' result ' + new Date().getFullYear(),
-    bet.Title + ' outcome winner',
+    bet.Title + ' result score',
+    bet.Title + ' winner outcome today',
+    bet.Title + ' final score ' + today,
   ];
 
   let searchResults = '';
+
+  // DDG HTML search — gets real web results with snippets
   for (const query of searchQueries) {
-    const ddg = await webSearch(query);
-    if (ddg.Abstract) searchResults += `Search "${query}": ${ddg.Abstract}\n`;
-    if (ddg.Answer) searchResults += `Answer: ${ddg.Answer}\n`;
-    if (ddg.RelatedTopics && ddg.RelatedTopics.length > 0) {
-      const topics = ddg.RelatedTopics.slice(0, 3).map(t => t.Text || '').filter(Boolean);
-      if (topics.length > 0) searchResults += `Related: ${topics.join('; ')}\n`;
+    try {
+      const ddg = await webSearch(query);
+      if (ddg.results && ddg.results.length > 0) {
+        searchResults += `\n=== Search: "${query}" ===\n`;
+        ddg.results.forEach((r, i) => {
+          searchResults += `${i + 1}. ${r.title}\n   ${r.snippet}\n`;
+        });
+      }
+    } catch (e) {
+      console.error('Search error:', e.message);
     }
   }
 
+  // Also try DDG instant answer as supplement
+  try {
+    const instant = await webSearchInstant(bet.Title + ' result');
+    if (instant.Abstract) searchResults += `\nInstant Answer: ${instant.Abstract}\n`;
+    if (instant.Answer) searchResults += `Direct Answer: ${instant.Answer}\n`;
+  } catch (e) { /* ignore */ }
+
+  console.log(`[Arbitrator] Search for "${bet.Title}" found ${searchResults.length} chars of results`);
+
   // Step 2: Ask Claude to arbitrate based on research
-  const systemPrompt = `You are the B3tz bet arbitrator. You must determine whether an open bet can be resolved based on available information.
+  const systemPrompt = `You are the B3tz bet arbitrator. Your job: determine if a bet's outcome is NOW KNOWN.
 
 Today's date: ${today}
 
-The bet details:
+Bet details:
 - Title: ${bet.Title}
 - Resolution Criteria: ${bet.ResolutionCriteria || 'Resolves YES if the stated event occurs, NO otherwise.'}
 - Event Date: ${bet.EventDate || 'Not specified'}
 - Created: ${bet.CreatedDate}
 
-Web search results about this bet:
+Web search results:
 ${searchResults || 'No relevant search results found.'}
 
-Your job:
-1. Determine if this bet's outcome is NOW KNOWN based on available evidence.
-2. If the event hasn't happened yet, or the outcome is unclear, say it's still pending.
-3. If the outcome IS known, state whether it resolves YES or NO and explain why.
-4. Be CONSERVATIVE — only resolve if you are highly confident the outcome is settled.
+IMPORTANT INSTRUCTIONS:
+1. Carefully read ALL search result snippets. Look for final scores, game outcomes, official results, news reports confirming an event happened or didn't happen.
+2. Sports games: Look for final scores, box scores, post-game reports. If multiple snippets confirm a game result, that's strong evidence.
+3. If the event date has PASSED and search results discuss the outcome, you should resolve the bet.
+4. Only say "pending" if the event genuinely hasn't happened yet or there's real ambiguity about the outcome.
+5. Do NOT default to "pending" just because the search results aren't perfectly clean — use all available evidence.
 
 Respond with ONLY a JSON object (no markdown, no code fences):
 
-If still pending (event hasn't happened or outcome unknown):
-{"status":"pending","reason":"Brief explanation of why it can't be resolved yet"}
-
-If resolved:
-{"status":"resolved","resolution":"yes" or "no","reason":"Clear explanation of the outcome with evidence"}`;
+If still pending: {"status":"pending","reason":"Brief explanation"}
+If resolved: {"status":"resolved","resolution":"yes" or "no","reason":"Clear explanation with evidence from search results"}`;
 
   const response = await callClaudeAPI(
-    [{ role: 'user', content: `Arbitrate this bet. Search results and bet details are in the system prompt.` }],
+    [{ role: 'user', content: `Arbitrate this bet now. Analyze all search results carefully for evidence of the outcome.` }],
     systemPrompt
   );
 
