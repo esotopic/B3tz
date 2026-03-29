@@ -1842,6 +1842,12 @@ let myRivals = []; // loaded from /api/rivals
 let rivalBetMap = {}; // betId -> [rivalUserIds], loaded from /api/rival-bet-ids
 let viewMode = 'all'; // 'all', 'nemesis', 'rivals', 'history'
 let involvement = 'everyone'; // 'everyone', 'myplays', 'created'
+
+// Infinite scroll state
+const CARDS_PER_PAGE = 30;
+let displayLimit = CARDS_PER_PAGE;
+let lastFilteredBets = []; // cached result of filtering/sorting for scroll appending
+let scrollObserver = null;
 let lastLoginDate = null; // tracks when user last logged in (for "recently resolved")
 
 // ══════════════════════════════
@@ -2112,7 +2118,7 @@ function eventDateToTs(dateStr) {
   return isNaN(d.getTime()) ? Infinity : d.getTime();
 }
 
-function renderBets() {
+function getFilteredBets() {
   const query = document.getElementById('searchInput').value.toLowerCase().trim();
   let filtered = allBets;
 
@@ -2162,22 +2168,18 @@ function renderBets() {
   }
 
   // ── Smart sorting ──
-  // Priority: nemesis bets you haven't acted on first, then rival bets, then everything else
-  // Within each group, sort by event_date ascending (soonest first)
   const nemIds = new Set(myRivals.filter(r => r.isMutual).map(r => r.id));
   const rivIds = new Set(myRivals.map(r => r.id));
 
   function getBetPriority(b) {
-    if (!currentUser) return 2; // not logged in, no priority
-    // Check if nemesis bet I haven't acted on
+    if (!currentUser) return 2;
     const rivals = rivalBetMap[b.id];
     const isNemBet = rivals && rivals.some(rid => nemIds.has(rid));
     const isRivBet = rivals && rivals.some(rid => rivIds.has(rid));
     const iActed = !!myBetsMap[b.id];
-
-    if (isNemBet && !iActed) return 0; // highest priority
+    if (isNemBet && !iActed) return 0;
     if (isRivBet) return 1;
-    return 2; // normal
+    return 2;
   }
 
   filtered.sort((a, b) => {
@@ -2187,6 +2189,62 @@ function renderBets() {
     return eventDateToTs(a.event_date) - eventDateToTs(b.event_date);
   });
 
+  return filtered;
+}
+
+function renderBetCard(bet) {
+  const isResolved = bet.status === 'resolved';
+  const resolutionBadge = isResolved
+    ? `<span class="resolution-badge ${bet.resolution}">${bet.resolution === 'yes' ? '✓ YES' : '✕ NO'}</span>`
+    : '';
+  const myPick = myBetsMap[bet.id] || null;
+  const myPickClass = myPick ? ` my-bet-${myPick}` : '';
+  const myPickBadge = myPick ? `<span class="my-pick-badge ${myPick}">YOU: ${myPick.toUpperCase()}</span>` : '';
+  return `
+  <div class="bet-card${isResolved ? ' resolved' : ''}${myPickClass}" style="cursor:pointer;" onclick="openExpandedCard(${bet.id})" title="${bet.resolution_criteria ? bet.resolution_criteria.replace(/"/g, '&quot;') : ''}">
+    <div class="card-top">
+      <div class="card-icon">${bet.icon}</div>
+      <div class="card-info">
+        <div class="card-title">${bet.title} ${resolutionBadge}</div>
+        <div class="card-meta">
+          <span class="cat-tag">${bet.category}</span>
+          ${myPickBadge}
+          <span class="date-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            ${bet.event_date ? formatDate(bet.event_date) : 'TBD'}
+          </span>
+        </div>
+      </div>
+    </div>
+    ${isResolved && bet.resolution_reason ? `<div style="font-size:12px;color:var(--text-muted);padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:8px;line-height:1.5;">${bet.resolution_reason}</div>` : ''}
+    <div class="odds-bar">
+      <div class="odds-fill" style="width: ${bet.yes_odds}%"></div>
+    </div>
+    <div class="bet-actions">
+      <button class="bet-btn yes${myPick === 'yes' ? ' my-pick' : ''}" onclick="event.stopPropagation(); handleBet(${bet.id}, 'yes')" ${isResolved ? 'disabled' : ''}>
+        <span class="pct">${bet.yes_odds}%</span>
+        <span class="label">Yes</span>
+      </button>
+      <button class="bet-btn no${myPick === 'no' ? ' my-pick' : ''}" onclick="event.stopPropagation(); handleBet(${bet.id}, 'no')" ${isResolved ? 'disabled' : ''}>
+        <span class="pct">${bet.no_odds}%</span>
+        <span class="label">No</span>
+      </button>
+    </div>
+    <div class="card-footer">
+      <span class="volume">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        ${formatVolume(bet.volume)} vol
+      </span>
+      <span class="bettors">${(bet.yes_count + bet.no_count).toLocaleString()} bets</span>
+    </div>
+    ${!isResolved ? `<div class="card-challenge-icon" title="Challenge a friend on this bet" onclick="event.stopPropagation(); openExpandedCard(${bet.id}); setTimeout(() => { const cb = document.getElementById('btnChallenge'); if(cb) cb.click(); }, 300);">⚔️</div>` : ''}
+  </div>`;
+}
+
+function renderBets(appendOnly) {
+  const filtered = getFilteredBets();
+  lastFilteredBets = filtered;
+
   const grid = document.getElementById('betGrid');
   const count = document.getElementById('betCount');
   count.textContent = `${filtered.length} bet${filtered.length !== 1 ? 's' : ''}`;
@@ -2194,10 +2252,12 @@ function renderBets() {
   // Empty states
   if (viewMode === 'nemesis' && !hasNemeses()) {
     grid.innerHTML = getNemesisEmptyState();
+    cleanupScrollObserver();
     return;
   }
   if (viewMode === 'rivals' && !hasRivals()) {
     grid.innerHTML = getRivalsEmptyState();
+    cleanupScrollObserver();
     return;
   }
   if (filtered.length === 0) {
@@ -2216,57 +2276,63 @@ function renderBets() {
       emptyMsg = `<div class="no-results"><div class="big-emoji">🔍</div><h3>No bets found</h3><p>Try a different search or create a new bet!</p></div>`;
     }
     grid.innerHTML = emptyMsg;
+    cleanupScrollObserver();
     return;
   }
 
-  grid.innerHTML = filtered.map(bet => {
-    const isResolved = bet.status === 'resolved';
-    const resolutionBadge = isResolved
-      ? `<span class="resolution-badge ${bet.resolution}">${bet.resolution === 'yes' ? '✓ YES' : '✕ NO'}</span>`
-      : '';
-    const myPick = myBetsMap[bet.id] || null;
-    const myPickClass = myPick ? ` my-bet-${myPick}` : '';
-    const myPickBadge = myPick ? `<span class="my-pick-badge ${myPick}">YOU: ${myPick.toUpperCase()}</span>` : '';
-    return `
-    <div class="bet-card${isResolved ? ' resolved' : ''}${myPickClass}" style="cursor:pointer;" onclick="openExpandedCard(${bet.id})" title="${bet.resolution_criteria ? bet.resolution_criteria.replace(/"/g, '&quot;') : ''}">
-      <div class="card-top">
-        <div class="card-icon">${bet.icon}</div>
-        <div class="card-info">
-          <div class="card-title">${bet.title} ${resolutionBadge}</div>
-          <div class="card-meta">
-            <span class="cat-tag">${bet.category}</span>
-            ${myPickBadge}
-            <span class="date-tag">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              ${bet.event_date ? formatDate(bet.event_date) : 'TBD'}
-            </span>
-          </div>
-        </div>
-      </div>
-      ${isResolved && bet.resolution_reason ? `<div style="font-size:12px;color:var(--text-muted);padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:8px;line-height:1.5;">${bet.resolution_reason}</div>` : ''}
-      <div class="odds-bar">
-        <div class="odds-fill" style="width: ${bet.yes_odds}%"></div>
-      </div>
-      <div class="bet-actions">
-        <button class="bet-btn yes${myPick === 'yes' ? ' my-pick' : ''}" onclick="event.stopPropagation(); handleBet(${bet.id}, 'yes')" ${isResolved ? 'disabled' : ''}>
-          <span class="pct">${bet.yes_odds}%</span>
-          <span class="label">Yes</span>
-        </button>
-        <button class="bet-btn no${myPick === 'no' ? ' my-pick' : ''}" onclick="event.stopPropagation(); handleBet(${bet.id}, 'no')" ${isResolved ? 'disabled' : ''}>
-          <span class="pct">${bet.no_odds}%</span>
-          <span class="label">No</span>
-        </button>
-      </div>
-      <div class="card-footer">
-        <span class="volume">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-          ${formatVolume(bet.volume)} vol
-        </span>
-        <span class="bettors">${(bet.yes_count + bet.no_count).toLocaleString()} bets</span>
-      </div>
-      ${!isResolved ? `<div class="card-challenge-icon" title="Challenge a friend on this bet" onclick="event.stopPropagation(); openExpandedCard(${bet.id}); setTimeout(() => { const cb = document.getElementById('btnChallenge'); if(cb) cb.click(); }, 300);">⚔️</div>` : ''}
-    </div>
-  `;}).join('');
+  // Determine which slice to render
+  const toShow = filtered.slice(0, displayLimit);
+  const hasMore = displayLimit < filtered.length;
+
+  if (appendOnly && grid.children.length > 0) {
+    // Append only the new cards (from previous displayLimit to current)
+    const prevCount = grid.querySelectorAll('.bet-card').length;
+    const newCards = toShow.slice(prevCount);
+    // Remove old sentinel
+    const oldSentinel = grid.querySelector('.scroll-sentinel');
+    if (oldSentinel) oldSentinel.remove();
+    // Append new cards
+    grid.insertAdjacentHTML('beforeend', newCards.map(renderBetCard).join(''));
+  } else {
+    // Full re-render (filters changed, new search, etc.)
+    grid.innerHTML = toShow.map(renderBetCard).join('');
+  }
+
+  // Add or update scroll sentinel for infinite scroll
+  const existingSentinel = grid.querySelector('.scroll-sentinel');
+  if (existingSentinel) existingSentinel.remove();
+
+  if (hasMore) {
+    grid.insertAdjacentHTML('beforeend', `<div class="scroll-sentinel" style="height:1px;width:100%;grid-column:1/-1;"></div>`);
+    setupScrollObserver();
+  } else {
+    cleanupScrollObserver();
+  }
+}
+
+function setupScrollObserver() {
+  cleanupScrollObserver();
+  const sentinel = document.querySelector('.scroll-sentinel');
+  if (!sentinel) return;
+  scrollObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      displayLimit += CARDS_PER_PAGE;
+      renderBets(true); // append-only mode
+    }
+  }, { rootMargin: '400px' });
+  scrollObserver.observe(sentinel);
+}
+
+function cleanupScrollObserver() {
+  if (scrollObserver) {
+    scrollObserver.disconnect();
+    scrollObserver = null;
+  }
+}
+
+// Reset display limit when filters/search change (keeps everything instant)
+function resetDisplayLimit() {
+  displayLimit = CARDS_PER_PAGE;
 }
 
 function updateStats() {
@@ -2578,6 +2644,7 @@ document.addEventListener('keydown', e => {
 
 function filterCategory(cat) {
   activeCategory = (activeCategory === cat) ? 'All' : cat; // toggle off if same
+  resetDisplayLimit();
   renderFilterRow();
   renderBets();
 }
@@ -2586,6 +2653,7 @@ function setMainTab(tab) {
   if ((tab === 'nemesis' || tab === 'rivals') && !currentUser) { openLoginModal(); return; }
   viewMode = tab;
   activeCategory = 'All'; // reset category when switching main tab
+  resetDisplayLimit();
   renderFilterRow();
   renderBets();
 }
@@ -2595,6 +2663,7 @@ function setInvolvement(mode) {
   involvement = mode;
   document.querySelectorAll('.involvement-btn').forEach(btn => btn.classList.remove('active'));
   document.getElementById(mode === 'myplays' ? 'invPlays' : mode === 'created' ? 'invCreated' : 'invAll').classList.add('active');
+  resetDisplayLimit();
   renderBets();
 }
 
@@ -2605,6 +2674,7 @@ function resetFilters() {
   document.getElementById('searchInput').value = '';
   document.querySelectorAll('.involvement-btn').forEach(btn => btn.classList.remove('active'));
   document.getElementById('invAll').classList.add('active');
+  resetDisplayLimit();
   renderFilterRow();
   renderBets();
 }
@@ -2794,6 +2864,7 @@ function updateViewFiltersVisibility() {
 }
 
 document.getElementById('searchInput').addEventListener('input', () => {
+  resetDisplayLimit();
   renderBets();
 });
 

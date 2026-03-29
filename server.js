@@ -941,9 +941,26 @@ async function handleRequest(req, res) {
     });
   }
 
-  // ── API: Bets ──
+  // ── API: Bets (supports pagination) ──
   if (pathname === '/api/bets' && req.method === 'GET') {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const page = parseInt(url.searchParams.get('page')) || 0;
+    const limit = Math.min(parseInt(url.searchParams.get('limit')) || 0, 200);
+    if (page > 0 && limit > 0) {
+      const start = (page - 1) * limit;
+      const slice = bets.slice(start, start + limit);
+      return sendJSON(res, 200, { bets: slice, total: bets.length, page, limit, hasMore: start + limit < bets.length });
+    }
+    // Default: return all (backward-compatible)
     return sendJSON(res, 200, { bets });
+  }
+
+  // ── API: Single bet detail ──
+  if (pathname.startsWith('/api/bets/detail/') && req.method === 'GET') {
+    const betId = parseInt(pathname.split('/').pop());
+    const bet = bets.find(b => b.id === betId);
+    if (!bet) return sendJSON(res, 404, { error: 'Bet not found' });
+    return sendJSON(res, 200, { bet });
   }
 
   if (pathname === '/api/categories' && req.method === 'GET') {
