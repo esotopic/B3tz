@@ -606,6 +606,307 @@ header {
   .nem-info h2 { justify-content: center; }
 }
 
+/* ═══ PRIVATE BETS (Nemesis 1v1) ═══ */
+.pb-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 28px 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.pb-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pb-create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 100px;
+  border: 1px solid rgba(217,119,6,0.4);
+  background: rgba(217,119,6,0.12);
+  color: #D97706;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  transition: all 0.2s;
+}
+.pb-create-btn:hover {
+  background: rgba(217,119,6,0.22);
+  border-color: rgba(217,119,6,0.6);
+  transform: translateY(-1px);
+}
+
+/* Private bet card — versus style */
+.pb-card {
+  background: var(--surface);
+  border: 1px solid rgba(217,119,6,0.2);
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s;
+}
+.pb-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #D97706, #ffd740, #D97706);
+}
+.pb-card:hover { border-color: rgba(217,119,6,0.4); }
+.pb-card.status-pending { border-style: dashed; }
+.pb-card.status-resolved { opacity: 0.8; }
+
+.pb-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  margin-bottom: 10px;
+}
+.pb-card-status.pending { background: rgba(255,193,7,0.12); color: #FFC107; }
+.pb-card-status.active { background: rgba(0,230,118,0.12); color: var(--yes); }
+.pb-card-status.resolved { background: rgba(124,77,255,0.12); color: var(--accent); }
+.pb-card-status.declined { background: rgba(255,82,82,0.12); color: #ff5252; }
+
+.pb-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.pb-versus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 12px 0;
+}
+.pb-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.pb-player-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+}
+.pb-player.challenger .pb-player-avatar { background: rgba(0,230,118,0.15); color: var(--yes); border: 2px solid rgba(0,230,118,0.3); }
+.pb-player.challenged .pb-player-avatar { background: rgba(217,119,6,0.15); color: #D97706; border: 2px solid rgba(217,119,6,0.3); }
+.pb-player-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pb-player-side {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+.pb-player-side.yes { background: var(--yes-bg); color: var(--yes); }
+.pb-player-side.no { background: var(--no-bg); color: var(--no); }
+.pb-vs-icon {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.pb-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.pb-card-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pb-btn-accept {
+  background: rgba(0,230,118,0.12);
+  color: var(--yes);
+  border-color: rgba(0,230,118,0.3) !important;
+}
+.pb-btn-accept:hover { background: rgba(0,230,118,0.22); }
+.pb-btn-decline {
+  background: rgba(255,82,82,0.08);
+  color: #ff5252;
+  border-color: rgba(255,82,82,0.2) !important;
+}
+.pb-btn-decline:hover { background: rgba(255,82,82,0.16); }
+
+.pb-winner-banner {
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+.pb-winner-banner.won { background: rgba(0,230,118,0.1); color: var(--yes); border: 1px solid rgba(0,230,118,0.2); }
+.pb-winner-banner.lost { background: rgba(255,82,82,0.08); color: #ff5252; border: 1px solid rgba(255,82,82,0.15); }
+
+.pb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+@media (max-width: 768px) {
+  .pb-grid { grid-template-columns: 1fr; }
+}
+
+/* Private bet create modal */
+.pb-modal-content {
+  background: var(--surface);
+  border: 1px solid rgba(217,119,6,0.3);
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 480px;
+  width: 90%;
+  position: relative;
+}
+.pb-modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #D97706, #ffd740, #D97706);
+  border-radius: 20px 20px 0 0;
+}
+.pb-modal-content h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.pb-modal-content .pb-subtitle {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+}
+.pb-form-group {
+  margin-bottom: 16px;
+}
+.pb-form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.pb-form-group input, .pb-form-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.pb-form-group input:focus, .pb-form-group textarea:focus {
+  border-color: rgba(217,119,6,0.5);
+}
+.pb-form-group textarea { resize: vertical; min-height: 70px; }
+
+.pb-side-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.pb-side-btn {
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: transparent;
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pb-side-btn.yes { color: var(--yes); }
+.pb-side-btn.no { color: var(--no); }
+.pb-side-btn.yes.selected { border-color: var(--yes); background: var(--yes-bg); }
+.pb-side-btn.no.selected { border-color: var(--no); background: var(--no-bg); }
+
+.pb-submit-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #D97706, #ffc107);
+  color: #000;
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pb-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(217,119,6,0.3); }
+.pb-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Pending challenge banner */
+.pending-challenge-banner {
+  background: linear-gradient(135deg, rgba(217,119,6,0.12), rgba(255,193,7,0.08));
+  border: 1px solid rgba(217,119,6,0.3);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  animation: pulse-border 2s ease-in-out infinite;
+}
+@keyframes pulse-border {
+  0%, 100% { border-color: rgba(217,119,6,0.3); }
+  50% { border-color: rgba(217,119,6,0.6); }
+}
+.pending-challenge-banner .pcb-icon { font-size: 28px; }
+.pending-challenge-banner .pcb-info { flex: 1; }
+.pending-challenge-banner .pcb-title { font-size: 14px; font-weight: 700; color: #D97706; }
+.pending-challenge-banner .pcb-desc { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+.pending-challenge-banner .pcb-actions { display: flex; gap: 8px; }
+
 /* ═══ LEADERBOARD VIEW ═══ */
 #leaderboardView {
   display: none;
@@ -2193,6 +2494,7 @@ footer .footer-text {
   <div class="avatar-row-inner" id="avatarRowInner"></div>
 </div>
 
+<div id="pendingChallengesHome"></div>
 <section class="bets-section">
   <div class="section-header" style="display:none;">
     <h2 class="section-title" id="sectionTitle">All Markets</h2>
@@ -2282,6 +2584,15 @@ footer .footer-text {
     </div>
     <div class="nem-filter-row" id="nemFilterRow"></div>
     <div class="nem-bet-grid" id="nemBetGrid"></div>
+  </div>
+  <!-- Private Bets Section (shown in nemesis profile) -->
+  <div id="nemPrivateBetsSection" style="display:none;">
+    <div class="pb-section-header">
+      <div class="pb-section-title">⚔️ Private Challenges</div>
+      <button class="pb-create-btn" onclick="openPbCreateModal()">+ New Challenge</button>
+    </div>
+    <div id="pbPendingBanner"></div>
+    <div class="pb-grid" id="pbGrid"></div>
   </div>
 </div>
 
@@ -2434,6 +2745,34 @@ footer .footer-text {
   </div>
 </div>
 
+<!-- Private Bet Creation Modal -->
+<div class="modal-overlay" id="pbCreateModal" onclick="if(event.target===this)closePbModal()">
+  <div class="pb-modal-content">
+    <button onclick="closePbModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:20px;">&times;</button>
+    <h2>⚔️ Private Challenge</h2>
+    <div class="pb-subtitle">Create a 1v1 bet against <strong id="pbRivalName"></strong></div>
+    <div class="pb-form-group">
+      <label>What's the bet?</label>
+      <input type="text" id="pbTitleInput" placeholder='e.g. "Lakers beat Celtics on Friday"' maxlength="300" />
+    </div>
+    <div class="pb-form-group">
+      <label>When does it resolve? (optional)</label>
+      <input type="date" id="pbDateInput" />
+    </div>
+    <div class="pb-form-group">
+      <label>Resolution criteria (optional)</label>
+      <textarea id="pbCriteriaInput" placeholder="How should the winner be determined?" maxlength="2000"></textarea>
+    </div>
+    <label style="display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">Your side</label>
+    <div class="pb-side-picker">
+      <button class="pb-side-btn yes" id="pbSideYes" onclick="selectPbSide('yes')">YES</button>
+      <button class="pb-side-btn no" id="pbSideNo" onclick="selectPbSide('no')">NO</button>
+    </div>
+    <div id="pbError" style="color:#ff5252;font-size:13px;margin-bottom:10px;display:none;"></div>
+    <button class="pb-submit-btn" id="pbSubmitBtn" onclick="submitPrivateBet()">Send Challenge ⚔️</button>
+  </div>
+</div>
+
 <script>
 let allBets = [];
 let activeCategory = 'All';
@@ -2525,7 +2864,7 @@ async function doLogin() {
     document.getElementById('loginInput').value = '';
     document.getElementById('loginPassword').value = '';
     errorEl.style.display = 'none';
-    await Promise.all([loadMyBets(), loadRivals()]);
+    await Promise.all([loadMyBets(), loadRivals(), loadPendingChallenges()]);
     updateViewFiltersVisibility();
     renderAvatarRow();
     renderFilterRow();
@@ -2577,7 +2916,7 @@ async function doRegister() {
     document.getElementById('regUsername').value = '';
     document.getElementById('regPassword').value = '';
     errorEl.style.display = 'none';
-    await Promise.all([loadMyBets(), loadRivals()]);
+    await Promise.all([loadMyBets(), loadRivals(), loadPendingChallenges()]);
     updateViewFiltersVisibility();
     renderAvatarRow();
     renderFilterRow();
@@ -2658,7 +2997,7 @@ async function checkAuth() {
       currentUser = data.user;
       lastLoginDate = data.user.LastLoginDate || data.user.lastLoginDate || null;
       updateNavUI();
-      await Promise.all([loadMyBets(), loadRivals()]);
+      await Promise.all([loadMyBets(), loadRivals(), loadPendingChallenges()]);
       updateViewFiltersVisibility();
       renderAvatarRow();
       renderFilterRow();
@@ -3083,6 +3422,7 @@ function showHomeView() {
   activeChallengeCode = null;
   nemesisProfileId = null;
   nemesisProfileData = null;
+  nemesisPrivateBets = [];
 }
 
 // Hash routing
@@ -3506,6 +3846,8 @@ async function showNemesisProfile(rivalId) {
 
     renderNemesisFilters();
     renderNemesisBets();
+    // Load private bets for this nemesis
+    loadPrivateBets(rivalId);
   } catch (e) {
     document.getElementById('nemProfileHeader').innerHTML = '<div style="text-align:center;padding:40px;color:var(--no)">Failed to load nemesis profile</div>';
   }
@@ -3515,6 +3857,7 @@ function hideNemesisView() {
   document.getElementById('nemesisView').classList.remove('active');
   nemesisProfileId = null;
   nemesisProfileData = null;
+  nemesisPrivateBets = [];
 }
 
 function getNemesisSharedBetIds() {
@@ -3600,6 +3943,237 @@ function renderNemesisBets() {
 document.getElementById('nemSearchInput').addEventListener('input', () => {
   renderNemesisBets();
 });
+
+// ══════════════════════════════════
+// ── Private Bets (Nemesis 1v1) ──
+// ══════════════════════════════════
+let nemesisPrivateBets = [];
+let pbSelectedSide = null;
+
+async function loadPrivateBets(rivalId) {
+  const section = document.getElementById('nemPrivateBetsSection');
+  const grid = document.getElementById('pbGrid');
+  const banner = document.getElementById('pbPendingBanner');
+
+  if (!currentUser) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dim)">Loading private bets...</div>';
+  banner.innerHTML = '';
+
+  try {
+    const res = await fetch(`/api/private-bets/rival/${rivalId}`, { credentials: 'include' });
+    const data = await res.json();
+    nemesisPrivateBets = data.privateBets || [];
+    renderPrivateBets();
+  } catch (e) {
+    grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dim)">Could not load private bets</div>';
+  }
+}
+
+function renderPrivateBets() {
+  const grid = document.getElementById('pbGrid');
+  const banner = document.getElementById('pbPendingBanner');
+  const userId = currentUser?.id || currentUser?.Id;
+
+  if (nemesisPrivateBets.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-dim);">
+      <div style="font-size:36px;margin-bottom:8px;">⚔️</div>
+      <div style="font-size:14px;">No private challenges yet. Start one!</div>
+    </div>`;
+    banner.innerHTML = '';
+    return;
+  }
+
+  // Render pending challenges banner for this user
+  const pendingForMe = nemesisPrivateBets.filter(pb => pb.status === 'pending' && pb.challengedId === userId);
+  if (pendingForMe.length > 0) {
+    banner.innerHTML = pendingForMe.map(pb => `
+      <div class="pending-challenge-banner">
+        <div class="pcb-icon">⚔️</div>
+        <div class="pcb-info">
+          <div class="pcb-title">${pb.challengerName} challenged you!</div>
+          <div class="pcb-desc">${pb.icon || '🔥'} ${pb.title} — they picked <strong>${pb.challengerSide.toUpperCase()}</strong></div>
+        </div>
+        <div class="pcb-actions">
+          <button class="pb-btn-accept" style="padding:8px 16px;border-radius:10px;border:1px solid rgba(0,230,118,0.3);background:rgba(0,230,118,0.12);color:var(--yes);font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;" onclick="respondPrivateBet(${pb.id}, 'accept')">Accept</button>
+          <button class="pb-btn-decline" style="padding:8px 16px;border-radius:10px;border:1px solid rgba(255,82,82,0.2);background:rgba(255,82,82,0.08);color:#ff5252;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;" onclick="respondPrivateBet(${pb.id}, 'decline')">Decline</button>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    banner.innerHTML = '';
+  }
+
+  // Render all private bet cards
+  grid.innerHTML = nemesisPrivateBets.map(pb => {
+    const isChallenger = pb.challengerId === userId;
+    const myName = isChallenger ? pb.challengerName : pb.challengedName;
+    const theirName = isChallenger ? pb.challengedName : pb.challengerName;
+    const mySide = isChallenger ? pb.challengerSide : pb.challengedSide;
+    const theirSide = isChallenger ? pb.challengedSide : pb.challengerSide;
+    const myInitial = (myName || '?')[0].toUpperCase();
+    const theirInitial = (theirName || '?')[0].toUpperCase();
+
+    let statusBadge = '';
+    if (pb.status === 'pending') statusBadge = '<span class="pb-card-status pending">⏳ Pending</span>';
+    else if (pb.status === 'active') statusBadge = '<span class="pb-card-status active">🔥 Active</span>';
+    else if (pb.status === 'resolved') statusBadge = '<span class="pb-card-status resolved">✅ Resolved</span>';
+    else if (pb.status === 'declined') statusBadge = '<span class="pb-card-status declined">✗ Declined</span>';
+
+    let winnerBanner = '';
+    if (pb.status === 'resolved' && pb.winnerId) {
+      const iWon = pb.winnerId === userId;
+      winnerBanner = `<div class="pb-winner-banner ${iWon ? 'won' : 'lost'}">${iWon ? '🏆 You won!' : '💀 ' + pb.winnerName + ' wins'}</div>`;
+    }
+
+    let actions = '';
+    if (pb.status === 'pending' && pb.challengedId === userId) {
+      actions = `<div class="pb-card-actions">
+        <button class="pb-btn-accept" onclick="respondPrivateBet(${pb.id}, 'accept')">✅ Accept</button>
+        <button class="pb-btn-decline" onclick="respondPrivateBet(${pb.id}, 'decline')">✗ Decline</button>
+      </div>`;
+    }
+
+    return `
+      <div class="pb-card status-${pb.status}">
+        ${statusBadge}
+        <div class="pb-card-title">${pb.icon || '🔥'} ${pb.title}</div>
+        <div class="pb-versus">
+          <div class="pb-player challenger">
+            <div class="pb-player-avatar">${isChallenger ? myInitial : theirInitial}</div>
+            <div class="pb-player-name">${isChallenger ? myName : theirName}</div>
+            <div class="pb-player-side ${pb.challengerSide}">${pb.challengerSide.toUpperCase()}</div>
+          </div>
+          <div class="pb-vs-icon">VS</div>
+          <div class="pb-player challenged">
+            <div class="pb-player-avatar">${isChallenger ? theirInitial : myInitial}</div>
+            <div class="pb-player-name">${isChallenger ? theirName : myName}</div>
+            ${pb.challengedSide ? `<div class="pb-player-side ${pb.challengedSide}">${pb.challengedSide.toUpperCase()}</div>` : '<div style="font-size:11px;color:var(--text-muted);">Waiting...</div>'}
+          </div>
+        </div>
+        ${winnerBanner}
+        ${actions}
+      </div>
+    `;
+  }).join('');
+}
+
+async function respondPrivateBet(betId, action) {
+  try {
+    const res = await fetch(`/api/private-bets/${betId}/respond`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    showToast(action === 'accept' ? '⚔️ Challenge accepted!' : 'Challenge declined');
+    // Reload private bets
+    if (nemesisProfileId) loadPrivateBets(nemesisProfileId);
+  } catch (e) {
+    showToast('Error: ' + e.message);
+  }
+}
+
+function openPbCreateModal() {
+  if (!currentUser) { openLoginModal(); return; }
+  if (!nemesisProfileData || !nemesisProfileData.rival) return;
+
+  const rival = nemesisProfileData.rival;
+  document.getElementById('pbRivalName').textContent = rival.displayName || rival.username;
+  document.getElementById('pbTitleInput').value = '';
+  document.getElementById('pbDateInput').value = '';
+  document.getElementById('pbCriteriaInput').value = '';
+  document.getElementById('pbError').style.display = 'none';
+  pbSelectedSide = null;
+  document.getElementById('pbSideYes').classList.remove('selected');
+  document.getElementById('pbSideNo').classList.remove('selected');
+  document.getElementById('pbCreateModal').classList.add('active');
+}
+
+function closePbModal() {
+  document.getElementById('pbCreateModal').classList.remove('active');
+}
+
+function selectPbSide(side) {
+  pbSelectedSide = side;
+  document.getElementById('pbSideYes').classList.toggle('selected', side === 'yes');
+  document.getElementById('pbSideNo').classList.toggle('selected', side === 'no');
+}
+
+async function submitPrivateBet() {
+  const title = document.getElementById('pbTitleInput').value.trim();
+  const eventDate = document.getElementById('pbDateInput').value;
+  const criteria = document.getElementById('pbCriteriaInput').value.trim();
+  const errEl = document.getElementById('pbError');
+
+  if (!title) { errEl.textContent = 'Enter a bet title'; errEl.style.display = 'block'; return; }
+  if (!pbSelectedSide) { errEl.textContent = 'Pick your side (YES or NO)'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+
+  const btn = document.getElementById('pbSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  try {
+    const rivalId = nemesisProfileId;
+    const res = await fetch('/api/private-bets/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        challengedId: rivalId,
+        title,
+        icon: '🔥',
+        category: 'General',
+        eventDate,
+        resolutionCriteria: criteria,
+        challengerSide: pbSelectedSide
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    closePbModal();
+    showToast('⚔️ Challenge sent!');
+    loadPrivateBets(rivalId);
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Challenge ⚔️';
+  }
+}
+
+// Load pending challenges on home view for notification
+async function loadPendingChallenges() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch('/api/private-bets/pending', { credentials: 'include' });
+    const data = await res.json();
+    const pending = data.pending || [];
+    const container = document.getElementById('pendingChallengesHome');
+    if (!container) return;
+    if (pending.length === 0) { container.innerHTML = ''; return; }
+    container.innerHTML = pending.map(pb => `
+      <div class="pending-challenge-banner" style="cursor:pointer;" onclick="showNemesisProfile(${pb.challengerId})">
+        <div class="pcb-icon">⚔️</div>
+        <div class="pcb-info">
+          <div class="pcb-title">${pb.challengerName} challenged you!</div>
+          <div class="pcb-desc">${pb.icon || '🔥'} ${pb.title}</div>
+        </div>
+        <div style="color:var(--text-muted);font-size:12px;">Tap to respond →</div>
+      </div>
+    `).join('');
+  } catch (e) { /* ignore */ }
+}
 
 function getNemesisEmptyState() {
   return `<div class="empty-feature">
@@ -3946,7 +4520,7 @@ async function inlineRegister(side) {
     }
     currentUser = data.user;
     updateNavUI();
-    await Promise.all([loadMyBets(), loadRivals()]);
+    await Promise.all([loadMyBets(), loadRivals(), loadPendingChallenges()]);
     updateViewFiltersVisibility();
     renderAvatarRow();
     renderFilterRow();
@@ -3992,7 +4566,7 @@ async function inlineLogin(side) {
     }
     currentUser = data.user;
     updateNavUI();
-    await Promise.all([loadMyBets(), loadRivals()]);
+    await Promise.all([loadMyBets(), loadRivals(), loadPendingChallenges()]);
     updateViewFiltersVisibility();
     renderAvatarRow();
     renderFilterRow();

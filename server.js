@@ -145,10 +145,36 @@ async function ensureTables() {
       );
       CREATE UNIQUE INDEX IX_B3tz_Rivals_Unique ON B3tz_Rivals(UserId, RivalUserId);
     END
+
+    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'B3tz_PrivateBets')
+    BEGIN
+      CREATE TABLE B3tz_PrivateBets (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        ChallengerId INT NOT NULL,
+        ChallengedId INT NOT NULL,
+        Title NVARCHAR(300) NOT NULL,
+        Icon NVARCHAR(10) DEFAULT '🔥',
+        Category NVARCHAR(50) DEFAULT 'General',
+        EventDate NVARCHAR(50),
+        ResolutionCriteria NVARCHAR(2000),
+        ChallengerSide NVARCHAR(3) NOT NULL,
+        ChallengedSide NVARCHAR(3),
+        Status NVARCHAR(20) DEFAULT 'pending',
+        Resolution NVARCHAR(10),
+        WinnerId INT,
+        CreatedDate DATETIME2 DEFAULT GETUTCDATE(),
+        AcceptedDate DATETIME2,
+        ResolvedDate DATETIME2,
+        FOREIGN KEY (ChallengerId) REFERENCES B3tz_Users(Id),
+        FOREIGN KEY (ChallengedId) REFERENCES B3tz_Users(Id)
+      );
+      CREATE INDEX IX_B3tz_PrivateBets_Challenger ON B3tz_PrivateBets(ChallengerId);
+      CREATE INDEX IX_B3tz_PrivateBets_Challenged ON B3tz_PrivateBets(ChallengedId);
+    END
   `;
   try {
     await dbPool.request().query(query);
-    console.log('B3tz tables ready (Users, Sessions, Bets, UserBets, Challenges, Rivals)');
+    console.log('B3tz tables ready (Users, Sessions, Bets, UserBets, Challenges, Rivals, PrivateBets)');
   } catch (e) {
     console.error('Table creation error:', e.message);
   }
@@ -2005,6 +2031,243 @@ async function handleRequest(req, res) {
     } catch (e) {
       console.error('Single arbitration error:', e.message);
       return sendJSON(res, 500, { error: 'Arbitration failed' });
+    }
+  }
+
+  // ══════════════════════════════════
+  // ── API: Private Bets (Nemesis 1v1) ──
+  // ══════════════════════════════════
+
+  if (pathname === '/api/private-bets/create' && req.method === 'POST') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in' });
+    const userId = user.Id || user.id;
+    const body = await parseBody(req);
+    const { challengedId, title, icon, category, eventDate, resolutionCriteria, challengerSide } = body;
+
+    if (!challengedId || !title || !challengerSide) {
+      return sendJSON(res, 400, { error: 'Missing required fields: challengedId, title, challengerSide' });
+    }
+    if (!['yes', 'no'].includes(challengerSide)) {
+      return sendJSON(res, 400, { error: 'challengerSide must be yes or no' });
+    }
+    if (parseInt(challengedId) === userId) {
+      return sendJSON(res, 400, { error: 'Cannot challenge yourself' });
+    }
+
+    if (dbPool) {
+      try {
+        const result = await dbPool.request()
+          .input('challengerId', sql.Int, userId)
+          .input('challengedId', sql.Int, parseInt(challengedId))
+          .input('title', sql.NVarChar, title.substring(0, 300))
+          .input('icon', sql.NVarChar, (icon || '🔥').substring(0, 10))
+          .input('category', sql.NVarChar, (category || 'General').substring(0, 50))
+          .input('eventDate', sql.NVarChar, (eventDate || '').substring(0, 50))
+          .input('resolutionCriteria', sql.NVarChar, (resolutionCriteria || '').substring(0, 2000))
+          .input('challengerSide', sql.NVarChar, challengerSide)
+          .query(`
+            INSERT INTO B3tz_PrivateBets (ChallengerId, ChallengedId, Title, Icon, Category, EventDate, ResolutionCriteria, ChallengerSide)
+            OUTPUT INSERTED.*
+            VALUES (@challengerId, @challengedId, @title, @icon, @category, @eventDate, @resolutionCriteria, @challengerSide)
+          `);
+        const created = result.recordset[0];
+        return sendJSON(res, 201, { privateBet: created });
+      } catch (e) {
+        console.error('Create private bet error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to create private bet' });
+      }
+    } else {
+      return sendJSON(res, 500, { error: 'Database required for private bets' });
+    }
+  }
+
+  if (pathname.match(/^\/api\/private-bets\/\d+\/respond$/) && req.method === 'POST') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in' });
+    const userId = user.Id || user.id;
+    const betId = parseInt(pathname.split('/')[3]);
+    const body = await parseBody(req);
+    const { action } = body; // 'accept' or 'decline'
+
+    if (!['accept', 'decline'].includes(action)) {
+      return sendJSON(res, 400, { error: 'action must be accept or decline' });
+    }
+
+    if (dbPool) {
+      try {
+        // Verify this user is the challenged party and bet is pending
+        const check = await dbPool.request()
+          .input('id', sql.Int, betId)
+          .input('userId', sql.Int, userId)
+          .query('SELECT * FROM B3tz_PrivateBets WHERE Id = @id AND ChallengedId = @userId AND Status = \'pending\'');
+
+        if (check.recordset.length === 0) {
+          return sendJSON(res, 404, { error: 'No pending challenge found for you' });
+        }
+
+        const pb = check.recordset[0];
+        const challengedSide = pb.ChallengerSide === 'yes' ? 'no' : 'yes';
+
+        if (action === 'accept') {
+          await dbPool.request()
+            .input('id', sql.Int, betId)
+            .input('challengedSide', sql.NVarChar, challengedSide)
+            .query('UPDATE B3tz_PrivateBets SET Status = \'active\', ChallengedSide = @challengedSide, AcceptedDate = GETUTCDATE() WHERE Id = @id');
+        } else {
+          await dbPool.request()
+            .input('id', sql.Int, betId)
+            .query('UPDATE B3tz_PrivateBets SET Status = \'declined\' WHERE Id = @id');
+        }
+
+        return sendJSON(res, 200, { success: true, action, betId });
+      } catch (e) {
+        console.error('Respond to private bet error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to respond to private bet' });
+      }
+    } else {
+      return sendJSON(res, 500, { error: 'Database required' });
+    }
+  }
+
+  const privateBetsListMatch = pathname.match(/^\/api\/private-bets\/rival\/(\d+)$/);
+  if (privateBetsListMatch && req.method === 'GET') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in' });
+    const userId = user.Id || user.id;
+    const rivalId = parseInt(privateBetsListMatch[1]);
+
+    if (dbPool) {
+      try {
+        const result = await dbPool.request()
+          .input('u1', sql.Int, userId)
+          .input('u2', sql.Int, rivalId)
+          .query(`
+            SELECT pb.*,
+                   uc.Username AS ChallengerUsername, uc.DisplayName AS ChallengerDisplayName,
+                   ud.Username AS ChallengedUsername, ud.DisplayName AS ChallengedDisplayName,
+                   uw.Username AS WinnerUsername, uw.DisplayName AS WinnerDisplayName
+            FROM B3tz_PrivateBets pb
+            LEFT JOIN B3tz_Users uc ON uc.Id = pb.ChallengerId
+            LEFT JOIN B3tz_Users ud ON ud.Id = pb.ChallengedId
+            LEFT JOIN B3tz_Users uw ON uw.Id = pb.WinnerId
+            WHERE (pb.ChallengerId = @u1 AND pb.ChallengedId = @u2)
+               OR (pb.ChallengerId = @u2 AND pb.ChallengedId = @u1)
+            ORDER BY pb.CreatedDate DESC
+          `);
+
+        const privateBets = result.recordset.map(pb => ({
+          id: pb.Id,
+          challengerId: pb.ChallengerId,
+          challengedId: pb.ChallengedId,
+          challengerName: pb.ChallengerDisplayName || pb.ChallengerUsername,
+          challengedName: pb.ChallengedDisplayName || pb.ChallengedUsername,
+          title: pb.Title,
+          icon: pb.Icon,
+          category: pb.Category,
+          eventDate: pb.EventDate,
+          resolutionCriteria: pb.ResolutionCriteria,
+          challengerSide: pb.ChallengerSide,
+          challengedSide: pb.ChallengedSide,
+          status: pb.Status,
+          resolution: pb.Resolution,
+          winnerId: pb.WinnerId,
+          winnerName: pb.WinnerDisplayName || pb.WinnerUsername || null,
+          createdDate: pb.CreatedDate,
+          acceptedDate: pb.AcceptedDate,
+          resolvedDate: pb.ResolvedDate
+        }));
+
+        return sendJSON(res, 200, { privateBets });
+      } catch (e) {
+        console.error('List private bets error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to list private bets' });
+      }
+    } else {
+      return sendJSON(res, 200, { privateBets: [] });
+    }
+  }
+
+  if (pathname === '/api/private-bets/pending' && req.method === 'GET') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in' });
+    const userId = user.Id || user.id;
+
+    if (dbPool) {
+      try {
+        const result = await dbPool.request()
+          .input('userId', sql.Int, userId)
+          .query(`
+            SELECT pb.*, uc.Username AS ChallengerUsername, uc.DisplayName AS ChallengerDisplayName
+            FROM B3tz_PrivateBets pb
+            JOIN B3tz_Users uc ON uc.Id = pb.ChallengerId
+            WHERE pb.ChallengedId = @userId AND pb.Status = 'pending'
+            ORDER BY pb.CreatedDate DESC
+          `);
+
+        const pending = result.recordset.map(pb => ({
+          id: pb.Id,
+          challengerId: pb.ChallengerId,
+          challengerName: pb.ChallengerDisplayName || pb.ChallengerUsername,
+          title: pb.Title,
+          icon: pb.Icon,
+          challengerSide: pb.ChallengerSide,
+          createdDate: pb.CreatedDate
+        }));
+
+        return sendJSON(res, 200, { pending });
+      } catch (e) {
+        console.error('Pending private bets error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to load pending bets' });
+      }
+    } else {
+      return sendJSON(res, 200, { pending: [] });
+    }
+  }
+
+  if (pathname.match(/^\/api\/private-bets\/\d+\/resolve$/) && req.method === 'POST') {
+    const user = dbPool ? await getUserFromSession(req) : memGetUserFromSession(req);
+    if (!user) return sendJSON(res, 401, { error: 'Must be logged in' });
+    const userId = user.Id || user.id;
+    const betId = parseInt(pathname.split('/')[3]);
+    const body = await parseBody(req);
+    const { resolution } = body; // 'yes' or 'no'
+
+    if (!['yes', 'no'].includes(resolution)) {
+      return sendJSON(res, 400, { error: 'resolution must be yes or no' });
+    }
+
+    if (dbPool) {
+      try {
+        // Get the private bet — must be active and involve this user
+        const check = await dbPool.request()
+          .input('id', sql.Int, betId)
+          .input('userId', sql.Int, userId)
+          .query('SELECT * FROM B3tz_PrivateBets WHERE Id = @id AND Status = \'active\' AND (ChallengerId = @userId OR ChallengedId = @userId)');
+
+        if (check.recordset.length === 0) {
+          return sendJSON(res, 404, { error: 'No active private bet found' });
+        }
+
+        const pb = check.recordset[0];
+        // Determine winner
+        let winnerId = null;
+        if (pb.ChallengerSide === resolution) winnerId = pb.ChallengerId;
+        else if (pb.ChallengedSide === resolution) winnerId = pb.ChallengedId;
+
+        await dbPool.request()
+          .input('id', sql.Int, betId)
+          .input('resolution', sql.NVarChar, resolution)
+          .input('winnerId', sql.Int, winnerId)
+          .query('UPDATE B3tz_PrivateBets SET Status = \'resolved\', Resolution = @resolution, WinnerId = @winnerId, ResolvedDate = GETUTCDATE() WHERE Id = @id');
+
+        return sendJSON(res, 200, { success: true, resolution, winnerId });
+      } catch (e) {
+        console.error('Resolve private bet error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to resolve private bet' });
+      }
+    } else {
+      return sendJSON(res, 500, { error: 'Database required' });
     }
   }
 
