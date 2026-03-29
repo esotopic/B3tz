@@ -1,0 +1,12 @@
+{
+  "name": "b3tz",
+  "version": "1.0.0",
+  "description": "B3tz — Social Prediction Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "mssql": "^10.0.2"
+  }
+}

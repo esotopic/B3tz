@@ -911,7 +911,23 @@ footer .footer-text {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span class="desk">Create Bet</span>
       </button>
-      <button class="btn-login" onclick="openLoginModal()">Sign In</button>
+      <!-- Logged out state -->
+      <button class="btn-login" id="navSignIn" onclick="openLoginModal()">Sign In</button>
+      <!-- Logged in state (hidden by default) -->
+      <div id="navUser" style="display:none; position:relative;">
+        <button class="btn-login" id="navUserBtn" onclick="toggleUserMenu()" style="display:flex; align-items:center; gap:8px;">
+          <span id="navAvatar" style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#7c4dff,#ff4081);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;"></span>
+          <span id="navUsername" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div id="userDropdown" style="display:none;position:absolute;right:0;top:48px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:180px;box-shadow:0 8px 40px rgba(0,0,0,0.4);z-index:200;">
+          <div style="padding:10px 12px;border-bottom:1px solid var(--border);margin-bottom:4px;">
+            <div style="font-weight:600;font-size:14px;" id="dropdownName"></div>
+            <div style="font-size:12px;color:var(--text-muted);" id="dropdownEmail"></div>
+          </div>
+          <button onclick="doLogout()" style="width:100%;padding:10px 12px;border:none;background:transparent;color:var(--no);font-family:Inter,sans-serif;font-size:14px;font-weight:500;text-align:left;border-radius:8px;cursor:pointer;" onmouseover="this.style.background='var(--no-bg)'" onmouseout="this.style.background='transparent'">Sign Out</button>
+        </div>
+      </div>
     </div>
   </div>
 </header>
@@ -974,7 +990,7 @@ footer .footer-text {
     <div class="bet-preview" id="betPreview"></div>
     <input type="text" class="modal-input" placeholder="Username or email" />
     <input type="password" class="modal-input" placeholder="Password" />
-    <button class="modal-submit yes" id="modalBetSubmit" onclick="placeBet()">Sign In & Place Bet</button>
+    <button class="modal-submit yes" id="modalBetSubmit" onclick="placeBetFromSignIn()">Sign In & Place Bet</button>
     <div class="modal-divider">or</div>
     <button class="btn-login" style="width:100%; padding:14px; border-radius:12px; font-size:15px;" onclick="closeModals()">Continue Browsing</button>
   </div>
@@ -1007,15 +1023,32 @@ footer .footer-text {
   </div>
 </div>
 
-<!-- Login Modal (generic) -->
+<!-- Login / Register Modal -->
 <div class="modal-overlay" id="loginModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModals()">✕</button>
-    <h2>Welcome back</h2>
-    <p>Sign in to create bets and track your predictions.</p>
-    <input type="text" class="modal-input" placeholder="Username or email" />
-    <input type="password" class="modal-input" placeholder="Password" />
-    <button class="btn-create-submit" onclick="closeModals(); showToast('✅ Signed in!')">Sign In</button>
+    <!-- Tab switcher -->
+    <div style="display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid var(--border);">
+      <button id="tabLogin" onclick="switchAuthTab('login')" style="flex:1;padding:12px;border:none;background:transparent;color:var(--text);font-family:Inter,sans-serif;font-size:15px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);transition:all 0.2s;">Sign In</button>
+      <button id="tabRegister" onclick="switchAuthTab('register')" style="flex:1;padding:12px;border:none;background:transparent;color:var(--text-muted);font-family:Inter,sans-serif;font-size:15px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;">Create Account</button>
+    </div>
+    <!-- Login form -->
+    <div id="loginForm">
+      <p style="color:var(--text-dim);font-size:14px;margin-bottom:20px;line-height:1.5;">Sign in to create bets and track your predictions.</p>
+      <input type="text" class="modal-input" id="loginInput" placeholder="Username or email" />
+      <input type="password" class="modal-input" id="loginPassword" placeholder="Password" />
+      <div id="loginError" style="color:var(--no);font-size:13px;margin-bottom:8px;display:none;"></div>
+      <button class="btn-create-submit" id="loginSubmitBtn" onclick="doLogin()">Sign In</button>
+    </div>
+    <!-- Register form -->
+    <div id="registerForm" style="display:none;">
+      <p style="color:var(--text-dim);font-size:14px;margin-bottom:20px;line-height:1.5;">Join B3tz and start making predictions.</p>
+      <input type="text" class="modal-input" id="regUsername" placeholder="Username" />
+      <input type="email" class="modal-input" id="regEmail" placeholder="Email" />
+      <input type="password" class="modal-input" id="regPassword" placeholder="Password (6+ characters)" />
+      <div id="registerError" style="color:var(--no);font-size:13px;margin-bottom:8px;display:none;"></div>
+      <button class="btn-create-submit" id="registerSubmitBtn" onclick="doRegister()">Create Account</button>
+    </div>
     <div class="modal-divider">or</div>
     <button class="btn-login" style="width:100%; padding:14px; border-radius:12px; font-size:15px;" onclick="closeModals()">Continue as Guest</button>
   </div>
@@ -1029,8 +1062,203 @@ let allBets = [];
 let activeCategory = 'All';
 let pendingBet = null;
 let selectedPosition = 'yes';
+let currentUser = null;
 
-// ── Fetch bets ──
+// ══════════════════════════════
+// ── AUTH FUNCTIONS ──
+// ══════════════════════════════
+
+function switchAuthTab(tab) {
+  const tabLogin = document.getElementById('tabLogin');
+  const tabRegister = document.getElementById('tabRegister');
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  if (tab === 'login') {
+    tabLogin.style.borderBottomColor = 'var(--accent)';
+    tabLogin.style.color = 'var(--text)';
+    tabLogin.style.fontWeight = '600';
+    tabRegister.style.borderBottomColor = 'transparent';
+    tabRegister.style.color = 'var(--text-muted)';
+    tabRegister.style.fontWeight = '500';
+    loginForm.style.display = 'block';
+    registerForm.style.display = 'none';
+  } else {
+    tabRegister.style.borderBottomColor = 'var(--accent)';
+    tabRegister.style.color = 'var(--text)';
+    tabRegister.style.fontWeight = '600';
+    tabLogin.style.borderBottomColor = 'transparent';
+    tabLogin.style.color = 'var(--text-muted)';
+    tabLogin.style.fontWeight = '500';
+    loginForm.style.display = 'none';
+    registerForm.style.display = 'block';
+  }
+  // Clear errors
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('registerError').style.display = 'none';
+}
+
+async function doLogin() {
+  const login = document.getElementById('loginInput').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errorEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginSubmitBtn');
+
+  if (!login || !password) {
+    errorEl.textContent = 'Please enter your username/email and password.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Signing in...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errorEl.textContent = data.error || 'Login failed.';
+      errorEl.style.display = 'block';
+      btn.textContent = 'Sign In';
+      btn.disabled = false;
+      return;
+    }
+    currentUser = data.user;
+    updateNavUI();
+    closeModals();
+    showToast('Welcome back, ' + currentUser.displayName + '!');
+    // Clear form
+    document.getElementById('loginInput').value = '';
+    document.getElementById('loginPassword').value = '';
+    errorEl.style.display = 'none';
+  } catch (e) {
+    errorEl.textContent = 'Network error. Please try again.';
+    errorEl.style.display = 'block';
+  }
+  btn.textContent = 'Sign In';
+  btn.disabled = false;
+}
+
+async function doRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const errorEl = document.getElementById('registerError');
+  const btn = document.getElementById('registerSubmitBtn');
+
+  if (!username || !email || !password) {
+    errorEl.textContent = 'All fields are required.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (username.length < 3) {
+    errorEl.textContent = 'Username must be at least 3 characters.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (password.length < 6) {
+    errorEl.textContent = 'Password must be at least 6 characters.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Creating account...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errorEl.textContent = data.error || 'Registration failed.';
+      errorEl.style.display = 'block';
+      btn.textContent = 'Create Account';
+      btn.disabled = false;
+      return;
+    }
+    currentUser = data.user;
+    updateNavUI();
+    closeModals();
+    showToast('Welcome to B3tz, ' + currentUser.displayName + '!');
+    // Clear form
+    document.getElementById('regUsername').value = '';
+    document.getElementById('regEmail').value = '';
+    document.getElementById('regPassword').value = '';
+    errorEl.style.display = 'none';
+  } catch (e) {
+    errorEl.textContent = 'Network error. Please try again.';
+    errorEl.style.display = 'block';
+  }
+  btn.textContent = 'Create Account';
+  btn.disabled = false;
+}
+
+async function doLogout() {
+  try {
+    await fetch('/api/logout', { method: 'POST' });
+  } catch (e) { /* ignore */ }
+  currentUser = null;
+  updateNavUI();
+  closeUserMenu();
+  showToast('Signed out. See you next time!');
+}
+
+function toggleUserMenu() {
+  const dd = document.getElementById('userDropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+function closeUserMenu() {
+  document.getElementById('userDropdown').style.display = 'none';
+}
+
+// Close dropdown if clicking outside
+document.addEventListener('click', (e) => {
+  const navUser = document.getElementById('navUser');
+  if (navUser && !navUser.contains(e.target)) {
+    closeUserMenu();
+  }
+});
+
+function updateNavUI() {
+  const signInBtn = document.getElementById('navSignIn');
+  const navUser = document.getElementById('navUser');
+
+  if (currentUser) {
+    signInBtn.style.display = 'none';
+    navUser.style.display = 'block';
+    const initial = (currentUser.displayName || currentUser.username || '?')[0].toUpperCase();
+    document.getElementById('navAvatar').textContent = initial;
+    document.getElementById('navUsername').textContent = currentUser.displayName || currentUser.username;
+    document.getElementById('dropdownName').textContent = currentUser.displayName || currentUser.username;
+    document.getElementById('dropdownEmail').textContent = currentUser.email || '';
+  } else {
+    signInBtn.style.display = 'inline-block';
+    navUser.style.display = 'none';
+  }
+}
+
+async function checkAuth() {
+  try {
+    const res = await fetch('/api/me');
+    const data = await res.json();
+    if (data.user) {
+      currentUser = data.user;
+      updateNavUI();
+    }
+  } catch (e) { /* not logged in */ }
+}
+
+// ══════════════════════════════
+// ── BETS & UI ──
+// ══════════════════════════════
+
 async function loadBets() {
   try {
     const res = await fetch('/api/bets');
@@ -1044,7 +1272,6 @@ async function loadBets() {
   }
 }
 
-// ── Render categories ──
 function renderCategories() {
   const cats = ['All', ...new Set(allBets.map(b => b.category))];
   const bar = document.getElementById('categoryBar');
@@ -1053,7 +1280,6 @@ function renderCategories() {
   ).join('');
 }
 
-// ── Render bets ──
 function renderBets() {
   const query = document.getElementById('searchInput').value.toLowerCase().trim();
   let filtered = allBets;
@@ -1124,7 +1350,6 @@ function renderBets() {
   `).join('');
 }
 
-// ── Stats ──
 function updateStats() {
   document.getElementById('totalBets').textContent = allBets.length;
   const vol = allBets.reduce((s, b) => s + b.volume, 0);
@@ -1133,7 +1358,6 @@ function updateStats() {
   document.getElementById('totalBettors').textContent = preds.toLocaleString();
 }
 
-// ── Category filter ──
 function filterCategory(cat) {
   activeCategory = cat;
   document.getElementById('sectionTitle').textContent = cat === 'All' ? 'All Markets' : cat;
@@ -1149,17 +1373,23 @@ function resetFilters() {
   renderBets();
 }
 
-// ── Search ──
 document.getElementById('searchInput').addEventListener('input', () => {
   renderBets();
 });
 
-// ── Bet handling ──
+// ── Bet handling (auth-aware) ──
 function handleBet(betId, side) {
   const bet = allBets.find(b => b.id === betId);
   if (!bet) return;
   pendingBet = { bet, side };
 
+  // If logged in, place bet directly
+  if (currentUser) {
+    placeBet();
+    return;
+  }
+
+  // Not logged in — show sign-in modal with bet preview
   const preview = document.getElementById('betPreview');
   preview.innerHTML = `
     <div class="preview-title">${bet.icon} ${bet.title}</div>
@@ -1171,6 +1401,48 @@ function handleBet(betId, side) {
   submitBtn.textContent = `Sign In & Bet ${side === 'yes' ? 'Yes' : 'No'}`;
 
   document.getElementById('signInModal').classList.add('active');
+}
+
+async function placeBetFromSignIn() {
+  // Sign in first, then place the bet
+  const loginVal = document.querySelector('#signInModal .modal-input[type="text"]').value.trim();
+  const passVal = document.querySelector('#signInModal .modal-input[type="password"]').value;
+
+  if (!loginVal || !passVal) {
+    showToast('Please enter username and password');
+    return;
+  }
+
+  const btn = document.getElementById('modalBetSubmit');
+  const origText = btn.textContent;
+  btn.textContent = 'Signing in...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login: loginVal, password: passVal })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || 'Login failed');
+      btn.textContent = origText;
+      btn.disabled = false;
+      return;
+    }
+    currentUser = data.user;
+    updateNavUI();
+    // Clear inputs
+    document.querySelector('#signInModal .modal-input[type="text"]').value = '';
+    document.querySelector('#signInModal .modal-input[type="password"]').value = '';
+    // Now place the pending bet
+    placeBet();
+  } catch (e) {
+    showToast('Network error');
+  }
+  btn.textContent = origText;
+  btn.disabled = false;
 }
 
 function placeBet() {
@@ -1190,6 +1462,10 @@ function selectPosition(pos) {
 }
 
 function openCreateModal() {
+  if (!currentUser) {
+    openLoginModal();
+    return;
+  }
   document.getElementById('createModal').classList.add('active');
   selectPosition('yes');
 }
@@ -1209,7 +1485,7 @@ function submitNewBet() {
     title,
     category,
     event_date: date || '2026-12-31',
-    created_by: 'You',
+    created_by: currentUser ? currentUser.displayName : 'Anonymous',
     yes_odds: selectedPosition === 'yes' ? 55 : 45,
     no_odds: selectedPosition === 'yes' ? 45 : 55,
     yes_count: selectedPosition === 'yes' ? 1 : 0,
@@ -1242,6 +1518,7 @@ function getCategoryIcon(cat) {
 
 // ── Modals ──
 function openLoginModal() {
+  switchAuthTab('login');
   document.getElementById('loginModal').classList.add('active');
 }
 
@@ -1257,6 +1534,14 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeModals();
+});
+
+// Allow Enter key to submit login/register forms
+document.getElementById('loginPassword').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('regPassword').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') doRegister();
 });
 
 // ── Toast ──
@@ -1280,6 +1565,7 @@ function formatVolume(v) {
 }
 
 // ── Init ──
+checkAuth();
 loadBets();
 </script>
 </body>
