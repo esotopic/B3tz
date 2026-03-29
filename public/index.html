@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B3tz — Put Your Mouth Where Your Money Is</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0b0f;
+  --surface: #12131a;
+  --card: #161721;
+  --card-hover: #1c1d2e;
+  --border: rgba(255,255,255,0.06);
+  --border-hover: rgba(255,255,255,0.12);
+  --text: #e8e8ed;
+  --text-dim: #8b8b9e;
+  --text-muted: #55566a;
+  --yes: #00e676;
+  --yes-bg: rgba(0,230,118,0.1);
+  --yes-border: rgba(0,230,118,0.25);
+  --no: #ff5252;
+  --no-bg: rgba(255,82,82,0.1);
+  --no-border: rgba(255,82,82,0.25);
+  --accent: #7c4dff;
+  --accent-glow: rgba(124,77,255,0.3);
+  --gold: #ffd740;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ═══ HEADER / NAV ═══ */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,11,15,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, #7c4dff, #ff4081, #ffd740);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  cursor: pointer;
+  user-select: none;
+}
+
+.logo span {
+  font-size: 14px;
+  background: linear-gradient(135deg, var(--text-dim), var(--text-muted));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+  font-weight: 500;
+  margin-left: 12px;
+  text-transform: uppercase;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-create {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #7c4dff, #651fff);
+  color: white;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+.btn-create:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 30px var(--accent-glow);
+}
+
+.btn-login {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-login:hover {
+  border-color: var(--border-hover);
+  background: var(--surface);
+}
+
+/* ═══ HERO ═══ */
+.hero {
+  position: relative;
+  padding: 80px 24px 60px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: 'B3TZ';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(120px, 20vw, 280px);
+  font-weight: 900;
+  letter-spacing: -8px;
+  color: rgba(255,255,255,0.02);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.hero-glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.hero-glow.purple {
+  top: -200px;
+  left: 20%;
+  background: #7c4dff;
+}
+
+.hero-glow.pink {
+  top: -100px;
+  right: 15%;
+  background: #ff4081;
+}
+
+.hero h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.hero h1 .highlight {
+  background: linear-gradient(135deg, #7c4dff, #ff4081);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero p {
+  color: var(--text-dim);
+  font-size: 18px;
+  max-width: 520px;
+  margin: 0 auto 40px;
+  line-height: 1.6;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ═══ SEARCH BAR ═══ */
+.search-section {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 24px 24px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 4px 4px 4px 20px;
+  transition: border-color 0.2s;
+}
+
+.search-bar:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.search-bar svg {
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.search-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  padding: 12px 0;
+}
+
+.search-bar input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ═══ CATEGORIES ═══ */
+.categories {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 24px 32px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.categories::-webkit-scrollbar { display: none; }
+
+.cat-pill {
+  flex-shrink: 0;
+  padding: 8px 18px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.cat-pill:hover {
+  border-color: var(--border-hover);
+  color: var(--text);
+  background: var(--surface);
+}
+
+.cat-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 2px 12px var(--accent-glow);
+}
+
+/* ═══ BET GRID ═══ */
+.bets-section {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.bet-count {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.bet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+/* ═══ BET CARD ═══ */
+.bet-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.bet-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.bet-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-hover);
+  background: var(--card-hover);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+}
+
+.bet-card:hover::before {
+  opacity: 1;
+}
+
+.bet-card.featured {
+  border-color: rgba(124,77,255,0.15);
+}
+
+.bet-card.featured::after {
+  content: '🔥';
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 16px;
+}
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.card-meta .cat-tag {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(124,77,255,0.1);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.card-meta .date-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* odds bar */
+.odds-bar {
+  height: 6px;
+  border-radius: 100px;
+  background: var(--no-bg);
+  margin-bottom: 14px;
+  overflow: hidden;
+  position: relative;
+}
+
+.odds-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--yes), #00c853);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* bet buttons */
+.bet-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.bet-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.bet-btn.yes {
+  background: var(--yes-bg);
+  border-color: var(--yes-border);
+  color: var(--yes);
+}
+
+.bet-btn.yes:hover {
+  background: rgba(0,230,118,0.18);
+  border-color: var(--yes);
+  box-shadow: 0 4px 20px rgba(0,230,118,0.15);
+}
+
+.bet-btn.no {
+  background: var(--no-bg);
+  border-color: var(--no-border);
+  color: var(--no);
+}
+
+.bet-btn.no:hover {
+  background: rgba(255,82,82,0.18);
+  border-color: var(--no);
+  box-shadow: 0 4px 20px rgba(255,82,82,0.15);
+}
+
+.bet-btn .pct {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.bet-btn .label {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* card footer */
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.card-footer .volume {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-footer .bettors {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ═══ SIGN-IN MODAL ═══ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.modal-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px;
+  max-width: 420px;
+  width: 90%;
+  position: relative;
+  transform: scale(0.95);
+  transition: transform 0.3s;
+}
+
+.modal-overlay.active .modal {
+  transform: scale(1);
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.modal h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.modal p {
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.modal .bet-preview {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.modal .bet-preview .preview-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.modal .bet-preview .preview-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.modal .bet-preview .preview-side.yes {
+  background: var(--yes-bg);
+  color: var(--yes);
+}
+
+.modal .bet-preview .preview-side.no {
+  background: var(--no-bg);
+  color: var(--no);
+}
+
+.modal-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.modal-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.modal-submit {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.modal-submit.yes {
+  background: linear-gradient(135deg, var(--yes), #00c853);
+  color: #0a0b0f;
+}
+
+.modal-submit.no {
+  background: linear-gradient(135deg, var(--no), #d50000);
+  color: white;
+}
+
+.modal-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.modal-divider {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 16px 0;
+  position: relative;
+}
+
+.modal-divider::before,
+.modal-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 20px);
+  height: 1px;
+  background: var(--border);
+}
+
+.modal-divider::before { left: 0; }
+.modal-divider::after { right: 0; }
+
+/* ═══ CREATE BET MODAL ═══ */
+.create-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.create-modal-content label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: -8px;
+}
+
+.create-modal-content .modal-input {
+  margin-bottom: 0;
+}
+
+.btn-create-submit {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #7c4dff, #651fff);
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+.btn-create-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 30px var(--accent-glow);
+}
+
+/* ═══ TOAST ═══ */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--card);
+  border: 1px solid var(--yes-border);
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--yes);
+  z-index: 2000;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ═══ FOOTER ═══ */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 24px;
+  text-align: center;
+}
+
+footer .footer-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+footer .footer-logo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  background: linear-gradient(135deg, #7c4dff, #ff4081);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+footer .footer-text {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 768px) {
+  .nav-inner { padding: 0 16px; height: 56px; }
+  .logo { font-size: 22px; }
+  .logo span { display: none; }
+  .hero { padding: 48px 16px 40px; }
+  .hero p { font-size: 16px; }
+  .stats-row { gap: 32px; }
+  .stat-value { font-size: 22px; }
+  .search-section, .categories, .bets-section { padding-left: 16px; padding-right: 16px; }
+  .bet-grid { grid-template-columns: 1fr; }
+  footer .footer-inner { flex-direction: column; gap: 12px; }
+  .btn-create span.desk { display: none; }
+}
+
+@media (max-width: 480px) {
+  .nav-actions { gap: 8px; }
+  .btn-create, .btn-login { padding: 8px 14px; font-size: 13px; }
+}
+
+/* ═══ LOADING SKELETON ═══ */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--card) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 12px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bet-card {
+  animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.bet-card:nth-child(1) { animation-delay: 0.02s; }
+.bet-card:nth-child(2) { animation-delay: 0.04s; }
+.bet-card:nth-child(3) { animation-delay: 0.06s; }
+.bet-card:nth-child(4) { animation-delay: 0.08s; }
+.bet-card:nth-child(5) { animation-delay: 0.10s; }
+.bet-card:nth-child(6) { animation-delay: 0.12s; }
+.bet-card:nth-child(7) { animation-delay: 0.14s; }
+.bet-card:nth-child(8) { animation-delay: 0.16s; }
+.bet-card:nth-child(9) { animation-delay: 0.18s; }
+.bet-card:nth-child(10) { animation-delay: 0.20s; }
+.bet-card:nth-child(11) { animation-delay: 0.22s; }
+.bet-card:nth-child(12) { animation-delay: 0.24s; }
+
+/* no results */
+.no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-muted);
+}
+
+.no-results .big-emoji {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.no-results h3 {
+  font-size: 18px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-inner">
+    <div class="logo" onclick="resetFilters()">B3TZ <span>Prediction Arena</span></div>
+    <div class="nav-actions">
+      <button class="btn-create" onclick="openCreateModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span class="desk">Create Bet</span>
+      </button>
+      <button class="btn-login" onclick="openLoginModal()">Sign In</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-glow purple"></div>
+  <div class="hero-glow pink"></div>
+  <h1>Think You <span class="highlight">Know</span> What's Next?</h1>
+  <p>Make bold predictions, challenge the crowd, and prove you actually know what you're talking about.</p>
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-value" id="totalBets">—</div>
+      <div class="stat-label">Active Bets</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="totalVolume">—</div>
+      <div class="stat-label">Total Volume</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="totalBettors">—</div>
+      <div class="stat-label">Predictions Made</div>
+    </div>
+  </div>
+</section>
+
+<div class="search-section">
+  <div class="search-bar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="searchInput" placeholder="Search bets... try &quot;F1&quot; or &quot;Bitcoin&quot;" autocomplete="off">
+  </div>
+</div>
+
+<div class="categories" id="categoryBar">
+  <!-- filled by JS -->
+</div>
+
+<section class="bets-section">
+  <div class="section-header">
+    <h2 class="section-title" id="sectionTitle">All Markets</h2>
+    <span class="bet-count" id="betCount"></span>
+  </div>
+  <div class="bet-grid" id="betGrid">
+    <!-- filled by JS -->
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">B3TZ</div>
+    <div class="footer-text">A 1000 Problems project. No real money. Just bragging rights.</div>
+  </div>
+</footer>
+
+<!-- Sign-In Modal (shown when trying to bet) -->
+<div class="modal-overlay" id="signInModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModals()">✕</button>
+    <h2>Sign in to bet</h2>
+    <p>You need an account to put your prediction on the line.</p>
+    <div class="bet-preview" id="betPreview"></div>
+    <input type="text" class="modal-input" placeholder="Username or email" />
+    <input type="password" class="modal-input" placeholder="Password" />
+    <button class="modal-submit yes" id="modalBetSubmit" onclick="placeBet()">Sign In & Place Bet</button>
+    <div class="modal-divider">or</div>
+    <button class="btn-login" style="width:100%; padding:14px; border-radius:12px; font-size:15px;" onclick="closeModals()">Continue Browsing</button>
+  </div>
+</div>
+
+<!-- Create Bet Modal -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModals()">✕</button>
+    <h2>Create a Bet</h2>
+    <p>Put something on the line. What do you think is going to happen?</p>
+    <div class="create-modal-content">
+      <label>Your prediction</label>
+      <input type="text" class="modal-input" id="newBetTitle" placeholder='e.g. "Spain wins 2026 World Cup"' />
+      <label>Category</label>
+      <input type="text" class="modal-input" id="newBetCategory" placeholder="e.g. Soccer, Tech, Crypto" />
+      <label>Event date</label>
+      <input type="date" class="modal-input" id="newBetDate" />
+      <label>Your position</label>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <button class="bet-btn yes" id="posYes" onclick="selectPosition('yes')" style="border-width:2px;">
+          <span class="label">Yes</span>
+        </button>
+        <button class="bet-btn no" id="posNo" onclick="selectPosition('no')" style="border-width:2px;">
+          <span class="label">No</span>
+        </button>
+      </div>
+      <button class="btn-create-submit" onclick="submitNewBet()">Create Bet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Login Modal (generic) -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModals()">✕</button>
+    <h2>Welcome back</h2>
+    <p>Sign in to create bets and track your predictions.</p>
+    <input type="text" class="modal-input" placeholder="Username or email" />
+    <input type="password" class="modal-input" placeholder="Password" />
+    <button class="btn-create-submit" onclick="closeModals(); showToast('✅ Signed in!')">Sign In</button>
+    <div class="modal-divider">or</div>
+    <button class="btn-login" style="width:100%; padding:14px; border-radius:12px; font-size:15px;" onclick="closeModals()">Continue as Guest</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+let allBets = [];
+let activeCategory = 'All';
+let pendingBet = null;
+let selectedPosition = 'yes';
+
+// ── Fetch bets ──
+async function loadBets() {
+  try {
+    const res = await fetch('/api/bets');
+    const data = await res.json();
+    allBets = data.bets;
+    renderCategories();
+    renderBets();
+    updateStats();
+  } catch (e) {
+    console.error('Failed to load bets:', e);
+  }
+}
+
+// ── Render categories ──
+function renderCategories() {
+  const cats = ['All', ...new Set(allBets.map(b => b.category))];
+  const bar = document.getElementById('categoryBar');
+  bar.innerHTML = cats.map(c =>
+    `<button class="cat-pill${c === activeCategory ? ' active' : ''}" onclick="filterCategory('${c}')">${c === 'All' ? '🌐 All' : c}</button>`
+  ).join('');
+}
+
+// ── Render bets ──
+function renderBets() {
+  const query = document.getElementById('searchInput').value.toLowerCase().trim();
+  let filtered = allBets;
+
+  if (activeCategory !== 'All') {
+    filtered = filtered.filter(b => b.category === activeCategory);
+  }
+
+  if (query) {
+    filtered = filtered.filter(b =>
+      b.title.toLowerCase().includes(query) ||
+      b.category.toLowerCase().includes(query) ||
+      b.created_by.toLowerCase().includes(query)
+    );
+  }
+
+  const grid = document.getElementById('betGrid');
+  const count = document.getElementById('betCount');
+  count.textContent = `${filtered.length} bet${filtered.length !== 1 ? 's' : ''}`;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="no-results">
+        <div class="big-emoji">🔍</div>
+        <h3>No bets found</h3>
+        <p>Try a different search or create a new bet!</p>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(bet => `
+    <div class="bet-card${bet.featured ? ' featured' : ''}">
+      <div class="card-top">
+        <div class="card-icon">${bet.icon}</div>
+        <div class="card-info">
+          <div class="card-title">${bet.title}</div>
+          <div class="card-meta">
+            <span class="cat-tag">${bet.category}</span>
+            <span class="date-tag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              ${formatDate(bet.event_date)}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="odds-bar">
+        <div class="odds-fill" style="width: ${bet.yes_odds}%"></div>
+      </div>
+      <div class="bet-actions">
+        <button class="bet-btn yes" onclick="event.stopPropagation(); handleBet(${bet.id}, 'yes')">
+          <span class="pct">${bet.yes_odds}%</span>
+          <span class="label">Yes</span>
+        </button>
+        <button class="bet-btn no" onclick="event.stopPropagation(); handleBet(${bet.id}, 'no')">
+          <span class="pct">${bet.no_odds}%</span>
+          <span class="label">No</span>
+        </button>
+      </div>
+      <div class="card-footer">
+        <span class="volume">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          ${formatVolume(bet.volume)} vol
+        </span>
+        <span class="bettors">${(bet.yes_count + bet.no_count).toLocaleString()} predictions</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Stats ──
+function updateStats() {
+  document.getElementById('totalBets').textContent = allBets.length;
+  const vol = allBets.reduce((s, b) => s + b.volume, 0);
+  document.getElementById('totalVolume').textContent = '$' + formatVolume(vol);
+  const preds = allBets.reduce((s, b) => s + b.yes_count + b.no_count, 0);
+  document.getElementById('totalBettors').textContent = preds.toLocaleString();
+}
+
+// ── Category filter ──
+function filterCategory(cat) {
+  activeCategory = cat;
+  document.getElementById('sectionTitle').textContent = cat === 'All' ? 'All Markets' : cat;
+  renderCategories();
+  renderBets();
+}
+
+function resetFilters() {
+  activeCategory = 'All';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('sectionTitle').textContent = 'All Markets';
+  renderCategories();
+  renderBets();
+}
+
+// ── Search ──
+document.getElementById('searchInput').addEventListener('input', () => {
+  renderBets();
+});
+
+// ── Bet handling ──
+function handleBet(betId, side) {
+  const bet = allBets.find(b => b.id === betId);
+  if (!bet) return;
+  pendingBet = { bet, side };
+
+  const preview = document.getElementById('betPreview');
+  preview.innerHTML = `
+    <div class="preview-title">${bet.icon} ${bet.title}</div>
+    <span class="preview-side ${side}">${side === 'yes' ? '✓ Yes' : '✕ No'} — ${side === 'yes' ? bet.yes_odds : bet.no_odds}%</span>
+  `;
+
+  const submitBtn = document.getElementById('modalBetSubmit');
+  submitBtn.className = 'modal-submit ' + side;
+  submitBtn.textContent = `Sign In & Bet ${side === 'yes' ? 'Yes' : 'No'}`;
+
+  document.getElementById('signInModal').classList.add('active');
+}
+
+function placeBet() {
+  if (!pendingBet) return;
+  closeModals();
+  showToast(`🎯 Bet placed! You said ${pendingBet.side.toUpperCase()} on "${pendingBet.bet.title}"`);
+  pendingBet = null;
+}
+
+// ── Create bet ──
+function selectPosition(pos) {
+  selectedPosition = pos;
+  document.getElementById('posYes').style.borderWidth = pos === 'yes' ? '2px' : '1px';
+  document.getElementById('posYes').style.opacity = pos === 'yes' ? '1' : '0.5';
+  document.getElementById('posNo').style.borderWidth = pos === 'no' ? '2px' : '1px';
+  document.getElementById('posNo').style.opacity = pos === 'no' ? '1' : '0.5';
+}
+
+function openCreateModal() {
+  document.getElementById('createModal').classList.add('active');
+  selectPosition('yes');
+}
+
+function submitNewBet() {
+  const title = document.getElementById('newBetTitle').value.trim();
+  const category = document.getElementById('newBetCategory').value.trim() || 'General';
+  const date = document.getElementById('newBetDate').value;
+
+  if (!title) {
+    document.getElementById('newBetTitle').style.borderColor = 'var(--no)';
+    return;
+  }
+
+  const newBet = {
+    id: allBets.length + 1,
+    title,
+    category,
+    event_date: date || '2026-12-31',
+    created_by: 'You',
+    yes_odds: selectedPosition === 'yes' ? 55 : 45,
+    no_odds: selectedPosition === 'yes' ? 45 : 55,
+    yes_count: selectedPosition === 'yes' ? 1 : 0,
+    no_count: selectedPosition === 'no' ? 1 : 0,
+    volume: 0,
+    status: 'open',
+    icon: getCategoryIcon(category),
+    featured: false
+  };
+
+  allBets.unshift(newBet);
+  closeModals();
+  renderBets();
+  updateStats();
+  showToast(`🎯 Bet created! "${title}"`);
+
+  document.getElementById('newBetTitle').value = '';
+  document.getElementById('newBetCategory').value = '';
+  document.getElementById('newBetDate').value = '';
+}
+
+function getCategoryIcon(cat) {
+  const icons = {
+    'F1': '🏎️', 'Soccer': '⚽', 'Basketball': '🏀', 'Baseball': '⚾',
+    'Crypto': '₿', 'Tech': '🤖', 'Science': '🔬', 'Music': '🎵',
+    'Gaming': '🎮', 'Politics': '🏛️', 'General': '🎲'
+  };
+  return icons[cat] || '🎲';
+}
+
+// ── Modals ──
+function openLoginModal() {
+  document.getElementById('loginModal').classList.add('active');
+}
+
+function closeModals() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModals();
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModals();
+});
+
+// ── Toast ──
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+// ── Helpers ──
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatVolume(v) {
+  if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M';
+  if (v >= 1000) return (v / 1000).toFixed(0) + 'K';
+  return v.toString();
+}
+
+// ── Init ──
+loadBets();
+</script>
+</body>
+</html>
