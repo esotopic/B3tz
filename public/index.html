@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>B3tz — Put Your Mouth Where Your Money Is</title>
+<title>B3tz — Find Your Nemesis</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap');
@@ -203,32 +203,7 @@ header {
   line-height: 1.6;
 }
 
-.stats-row {
-  display: flex;
-  justify-content: center;
-  gap: 48px;
-  margin-bottom: 40px;
-  position: relative;
-}
-
-.stat {
-  text-align: center;
-}
-
-.stat-value {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.stat-label {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-top: 4px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
+/* stats-row removed */
 
 /* ═══ SEARCH BAR ═══ */
 .search-section {
@@ -893,8 +868,6 @@ footer .footer-text {
   .logo span { display: none; }
   .hero { padding: 48px 16px 40px; }
   .hero p { font-size: 16px; }
-  .stats-row { gap: 32px; }
-  .stat-value { font-size: 22px; }
   .search-section, .categories, .bets-section { padding-left: 16px; padding-right: 16px; }
   .bet-grid { grid-template-columns: 1fr; }
   footer .footer-inner { flex-direction: column; gap: 12px; }
@@ -1351,22 +1324,8 @@ footer .footer-text {
 <section class="hero">
   <div class="hero-glow purple"></div>
   <div class="hero-glow pink"></div>
-  <h1>Think You <span class="highlight">Know</span> What's Next?</h1>
-  <p>Put your money where your mouth is. Pick a side, place your bet, and prove you actually know what you're talking about.</p>
-  <div class="stats-row">
-    <div class="stat">
-      <div class="stat-value" id="totalBets">—</div>
-      <div class="stat-label">Active Bets</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value" id="totalVolume">—</div>
-      <div class="stat-label">Total Volume</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value" id="totalBettors">—</div>
-      <div class="stat-label">Bets Placed</div>
-    </div>
-  </div>
+  <h1><span class="highlight">B3tz</span> — Find Your <span class="highlight">Nemesis</span></h1>
+  <p>Pick a side. Call your shot. Find out who keeps betting against you — then make it personal.</p>
 </section>
 
 <div class="search-section">
@@ -1619,6 +1578,7 @@ async function doLogin() {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ login, password })
     });
     const data = await res.json();
@@ -1667,6 +1627,7 @@ async function doRegister() {
     const res = await fetch('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ username, password })
     });
     const data = await res.json();
@@ -1698,7 +1659,7 @@ async function doRegister() {
 
 async function doLogout() {
   try {
-    await fetch('/api/logout', { method: 'POST' });
+    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
   } catch (e) { /* ignore */ }
   currentUser = null;
   myBetsMap = {};
@@ -1751,7 +1712,7 @@ function updateNavUI() {
 
 async function checkAuth() {
   try {
-    const res = await fetch('/api/me');
+    const res = await fetch('/api/me', { credentials: 'include' });
     const data = await res.json();
     if (data.user) {
       currentUser = data.user;
@@ -1769,7 +1730,7 @@ async function checkAuth() {
 
 async function loadBets() {
   try {
-    const res = await fetch('/api/bets');
+    const res = await fetch('/api/bets', { credentials: 'include' });
     const data = await res.json();
     allBets = data.bets;
     renderFilterRow();
@@ -1920,11 +1881,7 @@ function renderBets() {
 }
 
 function updateStats() {
-  document.getElementById('totalBets').textContent = allBets.length;
-  const vol = allBets.reduce((s, b) => s + b.volume, 0);
-  document.getElementById('totalVolume').textContent = '$' + formatVolume(vol);
-  const preds = allBets.reduce((s, b) => s + b.yes_count + b.no_count, 0);
-  document.getElementById('totalBettors').textContent = preds.toLocaleString();
+  // Stats section removed — no-op
 }
 
 // ═══ EXPANDED CARD VIEW ═══
@@ -2132,7 +2089,7 @@ function getRivalsEmptyState() {
 async function loadMyBets() {
   if (!currentUser) { myBetsMap = {}; return; }
   try {
-    const res = await fetch('/api/my-bets');
+    const res = await fetch('/api/my-bets', { credentials: 'include' });
     const data = await res.json();
     if (data.userBets) {
       myBetsMap = {};
@@ -2195,6 +2152,7 @@ async function placeBetFromSignIn() {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ login: loginVal, password: passVal })
     });
     const data = await res.json();
@@ -2229,6 +2187,7 @@ async function placeBet() {
     const res = await fetch('/api/bets/place', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ betId: bet.id, side })
     });
     const data = await res.json();
@@ -2311,6 +2270,7 @@ async function aiValidateBet() {
     const res = await fetch('/api/ai/validate-bet', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ input })
     });
     const data = await res.json();
@@ -2407,6 +2367,7 @@ async function confirmCreateBet() {
     const res = await fetch('/api/bets/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         title: aiValidatedBet.title,
         category: aiValidatedBet.category,
