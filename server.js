@@ -696,6 +696,39 @@ async function loadBetsFromDB() {
         } catch (mErr) { console.error('Odds migration error for bet', bet.id, mErr.message); }
       }
       console.log('Odds recalculation complete');
+
+      // Migration: ensure every bet has its creator as a player in B3tz_UserBets
+      console.log('Checking for bets missing creator entries...');
+      for (const bet of bets) {
+        if (!bet.created_by_user_id) continue;
+        try {
+          const existing = await dbPool.request()
+            .input('userId', sql.Int, bet.created_by_user_id)
+            .input('betId', sql.Int, bet.id)
+            .query('SELECT Id FROM B3tz_UserBets WHERE UserId = @userId AND BetId = @betId');
+          if (existing.recordset.length === 0) {
+            // Creator has no bet entry — add them as 'yes' by default
+            const defaultSide = 'yes';
+            await dbPool.request()
+              .input('userId', sql.Int, bet.created_by_user_id)
+              .input('betId', sql.Int, bet.id)
+              .input('side', sql.NVarChar, defaultSide)
+              .query('INSERT INTO B3tz_UserBets (UserId, BetId, Side) VALUES (@userId, @betId, @side)');
+            // Update bet counts and odds
+            bet.yes_count++;
+            const total = bet.yes_count + bet.no_count;
+            bet.yes_odds = Math.round((bet.yes_count / total) * 100);
+            bet.no_odds = 100 - bet.yes_odds;
+            await dbPool.request()
+              .input('id', sql.Int, bet.id)
+              .input('yc', sql.Int, bet.yes_count).input('nc', sql.Int, bet.no_count)
+              .input('yo', sql.Int, bet.yes_odds).input('no', sql.Int, bet.no_odds)
+              .query('UPDATE B3tz_Bets SET YesCount = @yc, NoCount = @nc, YesOdds = @yo, NoOdds = @no WHERE Id = @id');
+            console.log(`  Added creator ${bet.created_by} as 'yes' player on bet ${bet.id}: "${bet.title}"`);
+          }
+        } catch (mErr) { console.error('Creator backfill error for bet', bet.id, mErr.message); }
+      }
+      console.log('Creator backfill complete');
     }
   } catch (e) {
     console.error('Error loading bets from DB:', e.message);
@@ -1527,6 +1560,9 @@ async function handleRequest(req, res) {
 
     if (!title) {
       return sendJSON(res, 400, { error: 'Bet title is required' });
+    }
+    if (!position || (position !== 'yes' && position !== 'no')) {
+      return sendJSON(res, 400, { error: 'You must pick a side (Yes or No) before creating a bet' });
     }
 
     // Final content safety check on the title and resolution criteria
