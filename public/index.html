@@ -905,7 +905,7 @@ footer .footer-text {
 
 <header>
   <div class="nav-inner">
-    <div class="logo" onclick="resetFilters()">B3TZ <span>Prediction Arena</span></div>
+    <div class="logo" onclick="resetFilters()">B3TZ <span>Bet On Anything</span></div>
     <div class="nav-actions">
       <button class="btn-create" onclick="openCreateModal()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -936,7 +936,7 @@ footer .footer-text {
   <div class="hero-glow purple"></div>
   <div class="hero-glow pink"></div>
   <h1>Think You <span class="highlight">Know</span> What's Next?</h1>
-  <p>Make bold predictions, challenge the crowd, and prove you actually know what you're talking about.</p>
+  <p>Put your money where your mouth is. Pick a side, place your bet, and prove you actually know what you're talking about.</p>
   <div class="stats-row">
     <div class="stat">
       <div class="stat-value" id="totalBets">—</div>
@@ -948,7 +948,7 @@ footer .footer-text {
     </div>
     <div class="stat">
       <div class="stat-value" id="totalBettors">—</div>
-      <div class="stat-label">Predictions Made</div>
+      <div class="stat-label">Bets Placed</div>
     </div>
   </div>
 </section>
@@ -986,7 +986,7 @@ footer .footer-text {
   <div class="modal">
     <button class="modal-close" onclick="closeModals()">✕</button>
     <h2>Sign in to bet</h2>
-    <p>You need an account to put your prediction on the line.</p>
+    <p>You need an account to place your bet.</p>
     <div class="bet-preview" id="betPreview"></div>
     <input type="text" class="modal-input" placeholder="Username or email" />
     <input type="password" class="modal-input" placeholder="Password" />
@@ -1003,7 +1003,7 @@ footer .footer-text {
     <h2>Create a Bet</h2>
     <p>Put something on the line. What do you think is going to happen?</p>
     <div class="create-modal-content">
-      <label>Your prediction</label>
+      <label>Your bet</label>
       <input type="text" class="modal-input" id="newBetTitle" placeholder='e.g. "Spain wins 2026 World Cup"' />
       <label>Category</label>
       <input type="text" class="modal-input" id="newBetCategory" placeholder="e.g. Soccer, Tech, Crypto" />
@@ -1034,7 +1034,7 @@ footer .footer-text {
     </div>
     <!-- Login form -->
     <div id="loginForm">
-      <p style="color:var(--text-dim);font-size:14px;margin-bottom:20px;line-height:1.5;">Sign in to create bets and track your predictions.</p>
+      <p style="color:var(--text-dim);font-size:14px;margin-bottom:20px;line-height:1.5;">Sign in to create bets and track your wins.</p>
       <input type="text" class="modal-input" id="loginInput" placeholder="Username or email" />
       <input type="password" class="modal-input" id="loginPassword" placeholder="Password" />
       <div id="loginError" style="color:var(--no);font-size:13px;margin-bottom:8px;display:none;"></div>
@@ -1042,7 +1042,7 @@ footer .footer-text {
     </div>
     <!-- Register form -->
     <div id="registerForm" style="display:none;">
-      <p style="color:var(--text-dim);font-size:14px;margin-bottom:20px;line-height:1.5;">Join B3tz and start making predictions.</p>
+      <p style="color:var(--text-dim);font-size:14px;margin-bottom:20px;line-height:1.5;">Join B3tz and start placing bets.</p>
       <input type="text" class="modal-input" id="regUsername" placeholder="Username" />
       <input type="password" class="modal-input" id="regPassword" placeholder="Password" />
       <div id="registerError" style="color:var(--no);font-size:13px;margin-bottom:8px;display:none;"></div>
@@ -1331,7 +1331,7 @@ function renderBets() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
           ${formatVolume(bet.volume)} vol
         </span>
-        <span class="bettors">${(bet.yes_count + bet.no_count).toLocaleString()} predictions</span>
+        <span class="bettors">${(bet.yes_count + bet.no_count).toLocaleString()} bets</span>
       </div>
     </div>
   `).join('');
