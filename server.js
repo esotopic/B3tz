@@ -197,26 +197,23 @@ async function handleRequest(req, res) {
     const body = await parseBody(req);
     const { username, email, password } = body;
 
-    if (!username || !email || !password) {
-      return sendJSON(res, 400, { error: 'Username, email, and password are required' });
+    if (!username || !password) {
+      return sendJSON(res, 400, { error: 'Username and password are required' });
     }
-    if (username.length < 3 || username.length > 50) {
-      return sendJSON(res, 400, { error: 'Username must be 3-50 characters' });
+    if (username.length > 50) {
+      return sendJSON(res, 400, { error: 'Username must be 50 characters or less' });
     }
-    if (password.length < 6) {
-      return sendJSON(res, 400, { error: 'Password must be at least 6 characters' });
-    }
+    if (!email) email = username + '@b3tz.local'; // default placeholder if no email
 
     if (dbPool) {
       try {
         // Check if user exists
         const existing = await dbPool.request()
           .input('username', sql.NVarChar, username)
-          .input('email', sql.NVarChar, email)
-          .query('SELECT Id FROM B3tz_Users WHERE Username = @username OR Email = @email');
+          .query('SELECT Id FROM B3tz_Users WHERE Username = @username');
 
         if (existing.recordset.length > 0) {
-          return sendJSON(res, 409, { error: 'Username or email already taken' });
+          return sendJSON(res, 409, { error: 'Username already taken' });
         }
 
         const { hash, salt } = hashPassword(password);
@@ -252,8 +249,8 @@ async function handleRequest(req, res) {
       }
     } else {
       // Memory fallback
-      if (memoryUsers.find(u => u.username === username || u.email === email)) {
-        return sendJSON(res, 409, { error: 'Username or email already taken' });
+      if (memoryUsers.find(u => u.username === username)) {
+        return sendJSON(res, 409, { error: 'Username already taken' });
       }
       const { hash, salt } = hashPassword(password);
       const user = { id: memoryUsers.length + 1, username, email, displayName: username, hash, salt };
