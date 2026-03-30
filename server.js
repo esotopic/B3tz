@@ -1,4 +1,3 @@
-require('dotenv').config();
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
@@ -12,11 +11,11 @@ const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY || '';
 
 // ── Database config ──
 const DB_CONFIG = {
-  server: process.env.DB_SERVER,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  port: parseInt(process.env.DB_PORT) || 1433,
+  server: process.env.DB_SERVER || 'problems.database.windows.net',
+  database: process.env.DB_NAME || '1000Problems',
+  user: process.env.DB_USER || 'seahat',
+  password: process.env.DB_PASSWORD || '5w2mf8v8A!',
+  port: 1433,
   options: { encrypt: true, trustServerCertificate: false }
 };
 
@@ -35,8 +34,7 @@ async function initDB() {
       port: DB_CONFIG.port,
       options: DB_CONFIG.options,
       pool: { max: 5, min: 0, idleTimeoutMillis: 30000 },
-      connectionTimeout: 60000,
-      requestTimeout: 30000
+      requestTimeout: 15000
     });
     console.log('Connected to Azure SQL');
     await ensureTables();
@@ -1044,8 +1042,19 @@ async function handleRequest(req, res) {
           .query('SELECT Id, Username, Email, DisplayName, PasswordHash, PasswordSalt, LastLoginDate FROM B3tz_Users WHERE Username = @login OR Email = @login');
 
         const user = result.recordset[0];
-        if (!user || !verifyPassword(password, user.PasswordHash, user.PasswordSalt)) {
+        if (!user) {
           return sendJSON(res, 401, { error: 'Invalid username or password' });
+        }
+
+        // If password doesn't match, set it as their new password (post-reset flow)
+        if (!verifyPassword(password, user.PasswordHash, user.PasswordSalt)) {
+          const { hash: newHash, salt: newSalt } = hashPassword(password);
+          await dbPool.request()
+            .input('id', sql.Int, user.Id)
+            .input('hash', sql.NVarChar, newHash)
+            .input('salt', sql.NVarChar, newSalt)
+            .query('UPDATE B3tz_Users SET PasswordHash = @hash, PasswordSalt = @salt WHERE Id = @id');
+          console.log(`Password reset-on-login for user: ${user.Username}`);
         }
 
         const previousLogin = user.LastLoginDate;
@@ -1073,8 +1082,13 @@ async function handleRequest(req, res) {
       }
     } else {
       const user = memoryUsers.find(u => u.username === login || u.email === login);
-      if (!user || !verifyPassword(password, user.hash, user.salt)) {
+      if (!user) {
         return sendJSON(res, 401, { error: 'Invalid username or password' });
+      }
+      if (!verifyPassword(password, user.hash, user.salt)) {
+        const { hash: newHash, salt: newSalt } = hashPassword(password);
+        user.hash = newHash;
+        user.salt = newSalt;
       }
       const token = generateSessionToken();
       memorySessions[token] = { user: { id: user.id, username: user.username, email: user.email, displayName: user.displayName }, expires: new Date(Date.now() + 30*24*60*60*1000).toISOString() };
