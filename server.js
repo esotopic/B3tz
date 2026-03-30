@@ -2073,7 +2073,7 @@ async function handleRequest(req, res) {
             .input('side', sql.NVarChar, side)
             .query('INSERT INTO B3tz_UserBets (UserId, BetId, Side) VALUES (@userId, @betId, @side)');
         } catch (ube) { /* ignore if fails */ }
-        const apiBet = { id: betId, ...newBet };
+        const apiBet = { id: betId, ...newBet, created_date: new Date().toISOString() };
         bets.unshift(apiBet);
         return sendJSON(res, 201, { bet: apiBet });
       } catch (e) {
@@ -2081,7 +2081,7 @@ async function handleRequest(req, res) {
         return sendJSON(res, 500, { error: 'Failed to create bet' });
       }
     } else {
-      const apiBet = { id: bets.length + 100, ...newBet };
+      const apiBet = { id: bets.length + 100, ...newBet, created_date: new Date().toISOString() };
       bets.unshift(apiBet);
       return sendJSON(res, 201, { bet: apiBet });
     }
