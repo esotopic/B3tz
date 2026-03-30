@@ -1791,6 +1791,91 @@ footer .footer-text {
 .bet-card.resolved { opacity: 0.7; }
 .bet-card.resolved .bet-actions { pointer-events: none; opacity: 0.5; }
 
+/* ═══ HISTORY CARDS ═══ */
+.history-card {
+  border-radius: 16px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  opacity: 1;
+}
+.history-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+}
+.history-card.won {
+  background: linear-gradient(135deg, rgba(0,230,118,0.08), rgba(0,230,118,0.03));
+  border: 1px solid rgba(0,230,118,0.25);
+}
+.history-card.won:hover {
+  background: linear-gradient(135deg, rgba(0,230,118,0.14), rgba(0,230,118,0.06));
+  border-color: rgba(0,230,118,0.4);
+}
+.history-card.won::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--yes), transparent);
+}
+.history-card.lost {
+  background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.03));
+  border: 1px solid rgba(239,68,68,0.25);
+}
+.history-card.lost:hover {
+  background: linear-gradient(135deg, rgba(239,68,68,0.14), rgba(239,68,68,0.06));
+  border-color: rgba(239,68,68,0.4);
+}
+.history-card.lost::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, #ef4444, transparent);
+}
+.history-card.neutral {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.history-card.neutral:hover {
+  background: var(--card-hover);
+  border-color: var(--border-hover);
+}
+.history-outcome {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; padding: 4px 10px;
+  border-radius: 20px; letter-spacing: 0.5px;
+}
+.history-outcome.won {
+  background: rgba(0,230,118,0.15); color: var(--yes);
+}
+.history-outcome.lost {
+  background: rgba(239,68,68,0.15); color: #ef4444;
+}
+.history-outcome.neutral {
+  background: rgba(124,77,255,0.12); color: var(--accent);
+}
+.history-result {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding: 10px 12px;
+  background: rgba(255,255,255,0.03); border-radius: 10px;
+  font-size: 12px; color: var(--text-dim); line-height: 1.5;
+}
+.history-result-icon { font-size: 16px; flex-shrink: 0; }
+.history-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 12px; font-size: 12px; color: var(--text-muted);
+}
+.history-resolved-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--text-muted);
+}
+.history-pick {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; padding: 2px 8px;
+  border-radius: 10px;
+}
+.history-pick.yes { background: var(--yes-bg); color: var(--yes); }
+.history-pick.no { background: var(--no-bg); color: var(--no); }
+
 /* ═══ MY BET VISUAL CUES ═══ */
 .bet-card.my-bet-yes,
 .bet-card.my-bet-no {
@@ -3177,6 +3262,51 @@ function renderBetCard(bet) {
   </div>`;
 }
 
+function renderHistoryCard(bet) {
+  const myPick = myBetsMap[bet.id] || null;
+  const resolution = bet.resolution; // 'yes' or 'no'
+  let outcome = 'neutral';
+  let outcomeLabel = 'Resolved';
+  let outcomeIcon = '⚖️';
+  if (myPick) {
+    if (myPick === resolution) {
+      outcome = 'won';
+      outcomeLabel = 'You Won';
+      outcomeIcon = '🏆';
+    } else {
+      outcome = 'lost';
+      outcomeLabel = 'You Lost';
+      outcomeIcon = '💀';
+    }
+  }
+  const resLabel = resolution === 'yes' ? 'YES' : 'NO';
+  const reasonSnippet = bet.resolution_reason
+    ? (bet.resolution_reason.length > 120 ? bet.resolution_reason.substring(0, 120) + '…' : bet.resolution_reason)
+    : '';
+  return `
+  <div class="history-card ${outcome}" onclick="openExpandedCard(${bet.id})" style="cursor:pointer;">
+    <div class="card-top">
+      <div class="card-icon">${bet.icon}</div>
+      <div class="card-info">
+        <div class="card-title">${bet.title}</div>
+        <div class="card-meta">
+          <span class="cat-tag">${bet.category}</span>
+          <span class="history-outcome ${outcome}">${outcomeIcon} ${outcomeLabel}</span>
+          ${myPick ? `<span class="history-pick ${myPick}">Your pick: ${myPick.toUpperCase()}</span>` : ''}
+        </div>
+      </div>
+    </div>
+    ${reasonSnippet ? `<div class="history-result"><span class="history-result-icon">📋</span><span>Result: <strong>${resLabel}</strong> — ${reasonSnippet}</span></div>` : `<div class="history-result"><span class="history-result-icon">📋</span><span>Resolved: <strong>${resLabel}</strong></span></div>`}
+    <div class="history-footer">
+      <span class="history-resolved-tag">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        ${bet.event_date ? formatDate(bet.event_date) : 'TBD'}
+      </span>
+      <span>👥 ${(bet.yes_count + bet.no_count).toLocaleString()} bets</span>
+    </div>
+  </div>`;
+}
+
 function renderBets(appendOnly) {
   const filtered = getFilteredBets();
   lastFilteredBets = filtered;
@@ -3228,10 +3358,12 @@ function renderBets(appendOnly) {
     const oldSentinel = grid.querySelector('.scroll-sentinel');
     if (oldSentinel) oldSentinel.remove();
     // Append new cards
-    grid.insertAdjacentHTML('beforeend', newCards.map(renderBetCard).join(''));
+    const cardRenderer = viewMode === 'history' ? renderHistoryCard : renderBetCard;
+    grid.insertAdjacentHTML('beforeend', newCards.map(cardRenderer).join(''));
   } else {
     // Full re-render (filters changed, new search, etc.)
-    grid.innerHTML = toShow.map(renderBetCard).join('');
+    const cardRenderer = viewMode === 'history' ? renderHistoryCard : renderBetCard;
+    grid.innerHTML = toShow.map(cardRenderer).join('');
   }
 
   // Add or update scroll sentinel for infinite scroll
@@ -3313,25 +3445,44 @@ function showDetailView(betId) {
     banner.style.display = 'none';
   }
 
-  // Reset action panel structure (placeBet confirmation destroys inner elements)
+  // Action panel — hide entirely for resolved bets, show for active
   const actionPanel = document.querySelector('.detail-action');
-  if (actionPanel && !document.getElementById('dActionOdds')) {
+  if (bet.status === 'resolved') {
+    // Show resolved summary instead of Place Your Bet
+    const myPick = myBetsMap[bet.id] || null;
+    let outcomeHtml = '';
+    if (myPick) {
+      const won = myPick === bet.resolution;
+      outcomeHtml = won
+        ? `<div style="text-align:center;padding:16px 0;"><div style="font-size:40px;margin-bottom:8px;">🏆</div><div style="font-size:18px;font-weight:700;color:var(--yes);">You Won!</div><div style="font-size:13px;color:var(--text-dim);margin-top:4px;">Your pick: ${myPick.toUpperCase()} — Result: ${bet.resolution.toUpperCase()}</div></div>`
+        : `<div style="text-align:center;padding:16px 0;"><div style="font-size:40px;margin-bottom:8px;">💀</div><div style="font-size:18px;font-weight:700;color:#ef4444;">You Lost</div><div style="font-size:13px;color:var(--text-dim);margin-top:4px;">Your pick: ${myPick.toUpperCase()} — Result: ${bet.resolution.toUpperCase()}</div></div>`;
+    } else {
+      outcomeHtml = `<div style="text-align:center;padding:16px 0;"><div style="font-size:40px;margin-bottom:8px;">⚖️</div><div style="font-size:18px;font-weight:700;color:var(--accent);">Resolved</div><div style="font-size:13px;color:var(--text-dim);margin-top:4px;">Result: ${bet.resolution.toUpperCase()}</div></div>`;
+    }
     actionPanel.innerHTML = `
-      <div class="action-title">Place Your Bet</div>
-      <div class="action-odds" id="dActionOdds"></div>
-      <div class="action-info" id="dActionInfo"></div>
-      <div class="challenge-divider"></div>
-      <button class="btn-challenge" id="btnChallenge" onclick="challengeFriend()">
-        <span style="font-size:20px;">⚔️</span>
-        Challenge a Friend
-      </button>
+      <div class="action-title" style="color:var(--text-muted);">Final Result</div>
+      ${outcomeHtml}
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6;padding:12px;background:rgba(255,255,255,0.03);border-radius:10px;margin-top:8px;">${bet.resolution_reason || ''}</div>
     `;
-  }
-
-  // Show/hide challenge button (only if logged in)
-  const btnChallenge = document.getElementById('btnChallenge');
-  if (btnChallenge) {
-    btnChallenge.style.display = currentUser ? 'flex' : 'none';
+  } else {
+    // Active bet — show Place Your Bet
+    if (!document.getElementById('dActionOdds')) {
+      actionPanel.innerHTML = `
+        <div class="action-title">Place Your Bet</div>
+        <div class="action-odds" id="dActionOdds"></div>
+        <div class="action-info" id="dActionInfo"></div>
+        <div class="challenge-divider"></div>
+        <button class="btn-challenge" id="btnChallenge" onclick="challengeFriend()">
+          <span style="font-size:20px;">⚔️</span>
+          Challenge a Friend
+        </button>
+      `;
+    }
+    // Show/hide challenge button (only if logged in)
+    const btnChallenge = document.getElementById('btnChallenge');
+    if (btnChallenge) {
+      btnChallenge.style.display = currentUser ? 'flex' : 'none';
+    }
   }
 
   // Fill header
@@ -3377,22 +3528,17 @@ function showDetailView(betId) {
     <p>Total volume: <strong style="color:var(--text)">$${formatVolume(bet.volume)}</strong></p>
   `;
 
-  // Action panel (right side)
-  const isResolved = bet.status === 'resolved';
-  document.getElementById('dActionOdds').innerHTML = `
-    <button class="bet-btn yes${myPick === 'yes' ? ' my-pick' : ''}" onclick="handleBet(${bet.id}, 'yes');" ${isResolved ? 'disabled' : ''}>
-      ${bet.yes_odds}%<span class="label">Yes</span>
-    </button>
-    <button class="bet-btn no${myPick === 'no' ? ' my-pick' : ''}" onclick="handleBet(${bet.id}, 'no');" ${isResolved ? 'disabled' : ''}>
-      ${bet.no_odds}%<span class="label">No</span>
-    </button>
-  `;
-  // Arbitration button + info
-  const actionInfoEl = document.getElementById('dActionInfo');
-  if (isResolved) {
-    actionInfoEl.innerHTML = `<div style="color:var(--text-muted);margin-bottom:8px;">This bet has been resolved: ${bet.resolution_reason || 'See criteria'}</div>`;
-  } else {
-    actionInfoEl.innerHTML = `
+  // Action panel (right side) — only fill odds/buttons for non-resolved bets
+  if (bet.status !== 'resolved') {
+    document.getElementById('dActionOdds').innerHTML = `
+      <button class="bet-btn yes${myPick === 'yes' ? ' my-pick' : ''}" onclick="handleBet(${bet.id}, 'yes');">
+        ${bet.yes_odds}%<span class="label">Yes</span>
+      </button>
+      <button class="bet-btn no${myPick === 'no' ? ' my-pick' : ''}" onclick="handleBet(${bet.id}, 'no');">
+        ${bet.no_odds}%<span class="label">No</span>
+      </button>
+    `;
+    document.getElementById('dActionInfo').innerHTML = `
       <div style="color:var(--text-muted);margin-bottom:12px;">Pick a side — no real money, just bragging rights.</div>
       <button id="arbitrateBtn" onclick="arbitrateBet(${bet.id})" style="
         width:100%;padding:10px 16px;border:1px solid rgba(124,77,255,0.3);background:rgba(124,77,255,0.08);
@@ -3936,7 +4082,8 @@ function renderNemesisBets() {
     return;
   }
 
-  grid.innerHTML = filtered.map(renderBetCard).join('');
+  const nemCardRenderer = nemesisViewMode === 'history' ? renderHistoryCard : renderBetCard;
+  grid.innerHTML = filtered.map(nemCardRenderer).join('');
 }
 
 // Wire up nemesis search
