@@ -665,20 +665,20 @@ If resolved: {"status":"resolved","resolution":"yes" or "no","reason":"Clear exp
 // ── In-memory bet store (seed data) ──
 // ══════════════════════════════
 
-// ***REMOVED***'s picks: side chosen based on likely outcome analysis
+// seahat's picks: side chosen based on likely outcome analysis
 const seedBets = [
-  { id: 1, title: "Russell will win Miami Grand Prix", category: "F1", event_date: "2026-05-03", created_by: "***REMOVED***", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "🏎️", featured: true, resolution_criteria: "Resolves YES if George Russell is declared the official winner of the 2026 Miami Grand Prix. Resolves NO otherwise. If the race is postponed, resolution follows the rescheduled date." },
-  { id: 2, title: "Spain wins 2026 FIFA World Cup", category: "Soccer", event_date: "2026-07-19", created_by: "***REMOVED***", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "⚽", featured: true, resolution_criteria: "Resolves YES if Spain's national football team wins the 2026 FIFA World Cup Final. Resolves NO otherwise." },
-  { id: 3, title: "Bitcoin hits $200K before 2027", category: "Crypto", event_date: "2026-12-31", created_by: "***REMOVED***", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "₿", featured: true, resolution_criteria: "Resolves YES if Bitcoin (BTC) reaches a price of $200,000 USD or higher on any major exchange before January 1, 2027. Resolves NO if it does not reach this price by that date." },
-  { id: 4, title: "AI passes bar exam with 99th percentile", category: "Tech", event_date: "2026-12-31", created_by: "***REMOVED***", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "🤖", resolution_criteria: "Resolves YES if any AI system publicly achieves a 99th percentile score on the Uniform Bar Examination by end of 2026." },
-  { id: 5, title: "Lakers make NBA Finals 2026", category: "Basketball", event_date: "2026-06-15", created_by: "***REMOVED***", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "🏀", resolution_criteria: "Resolves YES if the Los Angeles Lakers reach the 2026 NBA Finals. Resolves NO if eliminated before the Finals." },
-  { id: 6, title: "Tesla releases sub-$25K vehicle in 2026", category: "Tech", event_date: "2026-12-31", created_by: "***REMOVED***", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "🚗", resolution_criteria: "Resolves YES if Tesla begins sales or deliveries of a vehicle with a base MSRP under $25,000 USD during 2026." },
-  { id: 7, title: "Ohtani hits 50+ HRs again in 2026", category: "Baseball", event_date: "2026-10-01", created_by: "***REMOVED***", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "⚾", resolution_criteria: "Resolves YES if Shohei Ohtani hits 50 or more home runs in the 2026 MLB regular season." },
-  { id: 8, title: "Ethereum flips Bitcoin market cap", category: "Crypto", event_date: "2026-12-31", created_by: "***REMOVED***", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "⟠", resolution_criteria: "Resolves YES if Ethereum's total market capitalization exceeds Bitcoin's at any point during 2026 on CoinMarketCap or CoinGecko." },
-  { id: 9, title: "US lands astronauts on Moon in 2026", category: "Science", event_date: "2026-12-31", created_by: "***REMOVED***", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "🌙", resolution_criteria: "Resolves YES if NASA's Artemis program successfully lands astronauts on the lunar surface during 2026. Resolves NO if the mission is delayed beyond 2026." },
-  { id: 10, title: "Next GTA breaks day-one sales record", category: "Gaming", event_date: "2026-12-31", created_by: "***REMOVED***", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "🎮", resolution_criteria: "Resolves YES if Grand Theft Auto VI breaks the existing record for day-one video game sales when it launches." },
-  { id: 11, title: "Verstappen wins F1 Championship 2026", category: "F1", event_date: "2026-12-15", created_by: "***REMOVED***", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "🏎️", resolution_criteria: "Resolves YES if Max Verstappen wins the 2026 FIA Formula One World Drivers' Championship." },
-  { id: 12, title: "Drake drops album before summer 2026", category: "Music", event_date: "2026-06-21", created_by: "***REMOVED***", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "🎵", resolution_criteria: "Resolves YES if Drake releases a new studio album before June 21, 2026 (first day of summer). Singles and EPs do not count." }
+  { id: 1, title: "Russell will win Miami Grand Prix", category: "F1", event_date: "2026-05-03", created_by: "seahat", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "🏎️", featured: true, resolution_criteria: "Resolves YES if George Russell is declared the official winner of the 2026 Miami Grand Prix. Resolves NO otherwise. If the race is postponed, resolution follows the rescheduled date." },
+  { id: 2, title: "Spain wins 2026 FIFA World Cup", category: "Soccer", event_date: "2026-07-19", created_by: "seahat", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "⚽", featured: true, resolution_criteria: "Resolves YES if Spain's national football team wins the 2026 FIFA World Cup Final. Resolves NO otherwise." },
+  { id: 3, title: "Bitcoin hits $200K before 2027", category: "Crypto", event_date: "2026-12-31", created_by: "seahat", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "₿", featured: true, resolution_criteria: "Resolves YES if Bitcoin (BTC) reaches a price of $200,000 USD or higher on any major exchange before January 1, 2027. Resolves NO if it does not reach this price by that date." },
+  { id: 4, title: "AI passes bar exam with 99th percentile", category: "Tech", event_date: "2026-12-31", created_by: "seahat", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "🤖", resolution_criteria: "Resolves YES if any AI system publicly achieves a 99th percentile score on the Uniform Bar Examination by end of 2026." },
+  { id: 5, title: "Lakers make NBA Finals 2026", category: "Basketball", event_date: "2026-06-15", created_by: "seahat", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "🏀", resolution_criteria: "Resolves YES if the Los Angeles Lakers reach the 2026 NBA Finals. Resolves NO if eliminated before the Finals." },
+  { id: 6, title: "Tesla releases sub-$25K vehicle in 2026", category: "Tech", event_date: "2026-12-31", created_by: "seahat", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "🚗", resolution_criteria: "Resolves YES if Tesla begins sales or deliveries of a vehicle with a base MSRP under $25,000 USD during 2026." },
+  { id: 7, title: "Ohtani hits 50+ HRs again in 2026", category: "Baseball", event_date: "2026-10-01", created_by: "seahat", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "⚾", resolution_criteria: "Resolves YES if Shohei Ohtani hits 50 or more home runs in the 2026 MLB regular season." },
+  { id: 8, title: "Ethereum flips Bitcoin market cap", category: "Crypto", event_date: "2026-12-31", created_by: "seahat", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "⟠", resolution_criteria: "Resolves YES if Ethereum's total market capitalization exceeds Bitcoin's at any point during 2026 on CoinMarketCap or CoinGecko." },
+  { id: 9, title: "US lands astronauts on Moon in 2026", category: "Science", event_date: "2026-12-31", created_by: "seahat", creator_side: "no", yes_count: 0, no_count: 1, volume: 1, status: "open", icon: "🌙", resolution_criteria: "Resolves YES if NASA's Artemis program successfully lands astronauts on the lunar surface during 2026. Resolves NO if the mission is delayed beyond 2026." },
+  { id: 10, title: "Next GTA breaks day-one sales record", category: "Gaming", event_date: "2026-12-31", created_by: "seahat", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "🎮", resolution_criteria: "Resolves YES if Grand Theft Auto VI breaks the existing record for day-one video game sales when it launches." },
+  { id: 11, title: "Verstappen wins F1 Championship 2026", category: "F1", event_date: "2026-12-15", created_by: "seahat", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "🏎️", resolution_criteria: "Resolves YES if Max Verstappen wins the 2026 FIA Formula One World Drivers' Championship." },
+  { id: 12, title: "Drake drops album before summer 2026", category: "Music", event_date: "2026-06-21", created_by: "seahat", creator_side: "yes", yes_count: 1, no_count: 0, volume: 1, status: "open", icon: "🎵", resolution_criteria: "Resolves YES if Drake releases a new studio album before June 21, 2026 (first day of summer). Singles and EPs do not count." }
 ];
 
 // Compute real odds from counts
@@ -691,12 +691,12 @@ seedBets.forEach(b => {
 // In-memory bets (used if DB not available, or as cache)
 let bets = [...seedBets];
 
-// Ensure ***REMOVED*** user exists and return its ID
+// Ensure seahat user exists and return its ID
 async function ensureSeahatUser() {
   if (!dbPool) return null;
   try {
     const existing = await dbPool.request()
-      .input('username', sql.NVarChar, '***REMOVED***')
+      .input('username', sql.NVarChar, 'seahat')
       .query('SELECT Id FROM B3tz_Users WHERE Username = @username');
     if (existing.recordset.length > 0) {
       // Always update password to known value so we can log in
@@ -706,24 +706,24 @@ async function ensureSeahatUser() {
         .input('hash', sql.NVarChar, hash)
         .input('salt', sql.NVarChar, salt)
         .query('UPDATE B3tz_Users SET PasswordHash = @hash, PasswordSalt = @salt WHERE Id = @id');
-      console.log('Updated ***REMOVED*** password');
+      console.log('Updated seahat password');
       return existing.recordset[0].Id;
     }
 
-    // Create ***REMOVED*** user with known password
+    // Create seahat user with known password
     const { hash, salt } = hashPassword('cuervo');
     const result = await dbPool.request()
-      .input('username', sql.NVarChar, '***REMOVED***')
-      .input('email', sql.NVarChar, '***REMOVED***@b3tz.local')
+      .input('username', sql.NVarChar, 'seahat')
+      .input('email', sql.NVarChar, 'seahat@b3tz.local')
       .input('hash', sql.NVarChar, hash)
       .input('salt', sql.NVarChar, salt)
-      .input('display', sql.NVarChar, '***REMOVED***')
+      .input('display', sql.NVarChar, 'seahat')
       .query(`INSERT INTO B3tz_Users (Username, Email, PasswordHash, PasswordSalt, DisplayName)
               OUTPUT INSERTED.Id VALUES (@username, @email, @hash, @salt, @display)`);
-    console.log('Created ***REMOVED*** user');
+    console.log('Created seahat user');
     return result.recordset[0].Id;
   } catch (e) {
-    console.error('Error creating ***REMOVED*** user:', e.message);
+    console.error('Error creating seahat user:', e.message);
     return null;
   }
 }
@@ -734,8 +734,8 @@ async function loadBetsFromDB() {
   try {
     const result = await dbPool.request().query('SELECT * FROM B3tz_Bets ORDER BY CreatedDate DESC');
     if (result.recordset.length === 0) {
-      // Ensure ***REMOVED*** user exists
-      const ***REMOVED***Id = await ensureSeahatUser();
+      // Ensure seahat user exists
+      const seahatId = await ensureSeahatUser();
 
       // Seed DB with initial bets
       for (const bet of seedBets) {
@@ -746,7 +746,7 @@ async function loadBetsFromDB() {
           .input('eventDate', sql.NVarChar, bet.event_date)
           .input('resCriteria', sql.NVarChar, bet.resolution_criteria)
           .input('createdBy', sql.NVarChar, bet.created_by)
-          .input('createdByUserId', sql.Int, ***REMOVED***Id)
+          .input('createdByUserId', sql.Int, seahatId)
           .input('yesOdds', sql.Int, bet.yes_odds)
           .input('noOdds', sql.Int, bet.no_odds)
           .input('yesCount', sql.Int, bet.yes_count)
@@ -757,37 +757,37 @@ async function loadBetsFromDB() {
                   OUTPUT INSERTED.Id
                   VALUES (@title, @category, @icon, @eventDate, @resCriteria, @createdBy, @createdByUserId, @yesOdds, @noOdds, @yesCount, @noCount, @volume, @featured)`);
 
-        // Create ***REMOVED***'s bet entry
-        if (***REMOVED***Id && bet.creator_side) {
+        // Create seahat's bet entry
+        if (seahatId && bet.creator_side) {
           const betDbId = insertResult.recordset[0].Id;
           await dbPool.request()
-            .input('userId', sql.Int, ***REMOVED***Id)
+            .input('userId', sql.Int, seahatId)
             .input('betId', sql.Int, betDbId)
             .input('side', sql.NVarChar, bet.creator_side)
             .query('INSERT INTO B3tz_UserBets (UserId, BetId, Side) VALUES (@userId, @betId, @side)');
         }
       }
-      console.log('Seeded B3tz_Bets with initial data (owned by ***REMOVED***)');
+      console.log('Seeded B3tz_Bets with initial data (owned by seahat)');
       // Reload
       const r2 = await dbPool.request().query('SELECT * FROM B3tz_Bets ORDER BY CreatedDate DESC');
       bets = r2.recordset.map(dbBetToApi);
     } else {
       bets = result.recordset.map(dbBetToApi);
 
-      // Migration: assign old seed bets to ***REMOVED*** if they have fake creator names
-      const ***REMOVED***Id = await ensureSeahatUser();
-      if (***REMOVED***Id) {
+      // Migration: assign old seed bets to seahat if they have fake creator names
+      const seahatId = await ensureSeahatUser();
+      if (seahatId) {
         const fakeNames = ['Angel', 'Carlos', 'Satoshi42', 'TechWatcher', 'LakeShow', 'EVFanatic', 'DiamondDog', 'DeFiMax', 'SpaceNerd', 'PixelKing', 'PitLane', '6ixGod'];
         for (const bet of bets) {
           if (fakeNames.includes(bet.created_by) && !bet.created_by_user_id) {
-            // Update to ***REMOVED*** ownership
+            // Update to seahat ownership
             await dbPool.request()
               .input('id', sql.Int, bet.id)
-              .input('name', sql.NVarChar, '***REMOVED***')
-              .input('userId', sql.Int, ***REMOVED***Id)
+              .input('name', sql.NVarChar, 'seahat')
+              .input('userId', sql.Int, seahatId)
               .query('UPDATE B3tz_Bets SET CreatedByName = @name, CreatedByUserId = @userId WHERE Id = @id');
-            bet.created_by = '***REMOVED***';
-            bet.created_by_user_id = ***REMOVED***Id;
+            bet.created_by = 'seahat';
+            bet.created_by_user_id = seahatId;
 
             // Find matching seed bet for the creator's side pick
             const seedBet = seedBets.find(sb => sb.title === bet.title);
@@ -802,14 +802,14 @@ async function loadBetsFromDB() {
                 if (r.Side === 'no') nc = r.cnt;
               }
 
-              // If ***REMOVED*** hasn't bet yet, create the bet entry
+              // If seahat hasn't bet yet, create the bet entry
               const existingBet = await dbPool.request()
-                .input('userId', sql.Int, ***REMOVED***Id)
+                .input('userId', sql.Int, seahatId)
                 .input('betId', sql.Int, bet.id)
                 .query('SELECT Id FROM B3tz_UserBets WHERE UserId = @userId AND BetId = @betId');
               if (existingBet.recordset.length === 0) {
                 await dbPool.request()
-                  .input('userId', sql.Int, ***REMOVED***Id)
+                  .input('userId', sql.Int, seahatId)
                   .input('betId', sql.Int, bet.id)
                   .input('side', sql.NVarChar, seedBet.creator_side)
                   .query('INSERT INTO B3tz_UserBets (UserId, BetId, Side) VALUES (@userId, @betId, @side)');
@@ -832,7 +832,7 @@ async function loadBetsFromDB() {
             }
           }
         }
-        console.log('Migrated seed bets to ***REMOVED*** ownership with real odds');
+        console.log('Migrated seed bets to seahat ownership with real odds');
       }
 
       // Migration: recalculate ALL bet odds from actual UserBets counts
