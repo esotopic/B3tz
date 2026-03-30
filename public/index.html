@@ -2657,6 +2657,7 @@ footer .footer-text {
 <div class="involvement-row">
   <div class="involvement-toggle" id="involvementToggle">
     <button class="involvement-btn active" id="invAll" onclick="setInvolvement('everyone')">Everyone</button>
+    <button class="involvement-btn" id="invNew" onclick="setInvolvement('new')">New</button>
     <button class="involvement-btn" id="invPlays" onclick="setInvolvement('myplays')">My Plays</button>
     <button class="involvement-btn" id="invCreated" onclick="setInvolvement('created')">Created</button>
   </div>
@@ -3277,8 +3278,14 @@ function getFilteredBets() {
     );
   }
 
-  // ── Sort by event date (soonest first) ──
-  filtered.sort((a, b) => eventDateToTs(a.event_date) - eventDateToTs(b.event_date));
+  // ── Sort ──
+  if (involvement === 'new') {
+    // Newest created first
+    filtered.sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
+  } else {
+    // Default: soonest event date first
+    filtered.sort((a, b) => eventDateToTs(a.event_date) - eventDateToTs(b.event_date));
+  }
 
   return filtered;
 }
@@ -3854,7 +3861,7 @@ function setInvolvement(mode) {
   if ((mode === 'myplays' || mode === 'created') && !currentUser) { openLoginModal(); return; }
   involvement = mode;
   document.querySelectorAll('.involvement-btn').forEach(btn => btn.classList.remove('active'));
-  document.getElementById(mode === 'myplays' ? 'invPlays' : mode === 'created' ? 'invCreated' : 'invAll').classList.add('active');
+  document.getElementById(mode === 'myplays' ? 'invPlays' : mode === 'created' ? 'invCreated' : mode === 'new' ? 'invNew' : 'invAll').classList.add('active');
   resetDisplayLimit();
   renderBets();
 }
