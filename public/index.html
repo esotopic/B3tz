@@ -2141,80 +2141,169 @@ footer .footer-text {
 .players-search input:focus { border-color: var(--accent); }
 .players-search input::placeholder { color: var(--text-muted); }
 
-.players-side-toggle {
+/* ═══ ENRICHED PLAYERS SECTION ═══ */
+.enriched-players-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.ep-header {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 16px;
-  border-bottom: 1px solid var(--border);
 }
-.players-side-btn {
-  flex: 1;
-  padding: 12px 16px;
-  border: none;
-  background: transparent;
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--text-dim);
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
+.ep-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
 }
-.players-side-btn.active-yes { color: var(--yes); border-bottom-color: var(--yes); }
-.players-side-btn.active-no { color: var(--no); border-bottom-color: var(--no); }
-.players-side-btn:hover { color: var(--text); }
+.ep-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.04);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
 
-.player-row {
+.ep-card {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 12px 14px;
   border-radius: 12px;
   transition: background 0.15s;
+  cursor: pointer;
 }
-.player-row:hover { background: var(--surface); }
-.player-avatar {
-  width: 38px;
-  height: 38px;
+.ep-card:hover { background: rgba(255,255,255,0.03); }
+.ep-card.is-you { background: rgba(124,77,255,0.05); border: 1px solid rgba(124,77,255,0.12); }
+
+.ep-avatar {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 16px;
+  flex-shrink: 0;
+  position: relative;
+}
+.ep-avatar.side-yes { background: var(--yes-bg); color: var(--yes); border: 2px solid var(--yes-border); }
+.ep-avatar.side-no { background: var(--no-bg); color: var(--no); border: 2px solid var(--no-border); }
+
+.ep-body { flex: 1; min-width: 0; }
+.ep-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ep-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ep-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.ep-badge.you { background: rgba(124,77,255,0.15); color: var(--accent); }
+.ep-badge.nemesis { background: rgba(255,64,129,0.15); color: #ff4081; }
+.ep-badge.rival { background: rgba(255,215,64,0.15); color: var(--gold); }
+.ep-badge.side-yes { background: var(--yes-bg); color: var(--yes); }
+.ep-badge.side-no { background: var(--no-bg); color: var(--no); }
+
+.ep-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Heat bar */
+.ep-heat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ep-heat-bar {
+  width: 48px;
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ep-heat-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.ep-heat-fill.cold { background: var(--yes); }
+.ep-heat-fill.warm { background: var(--gold); }
+.ep-heat-fill.hot { background: #ff4081; }
+
+.ep-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-shrink: 0;
 }
-.player-avatar.yes-avatar { background: var(--yes-bg); color: var(--yes); border: 1px solid var(--yes-border); }
-.player-avatar.no-avatar { background: var(--no-bg); color: var(--no); border: 1px solid var(--no-border); }
-.player-info { flex: 1; }
-.player-name { font-size: 15px; font-weight: 600; color: var(--text); }
-.player-badge {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 6px;
-}
-.player-badge.you-yes { background: rgba(0,230,118,0.12); color: var(--yes); }
-.player-badge.you-no { background: rgba(217,119,6,0.12); color: var(--no); }
-.player-badge.rival { background: rgba(124,77,255,0.12); color: var(--accent); }
-.btn-mark-rival {
-  padding: 6px 14px;
+
+.ep-rival-btn {
+  padding: 5px 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
-.btn-mark-rival:hover { border-color: var(--accent); color: var(--accent); background: rgba(124,77,255,0.08); }
-.btn-mark-rival.active { border-color: var(--accent); color: var(--accent); background: rgba(124,77,255,0.1); }
-.no-players {
+.ep-rival-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(124,77,255,0.08); }
+.ep-rival-btn.is-rival { border-color: var(--accent); color: var(--accent); background: rgba(124,77,255,0.08); }
+.ep-rival-btn.is-nemesis { border-color: #ff4081; color: #ff4081; background: rgba(255,64,129,0.08); }
+
+.ep-empty {
   text-align: center;
   padding: 32px;
   color: var(--text-muted);
   font-size: 14px;
 }
+
+/* Legacy compat — keep for nemesis view player lists */
+.players-side-toggle { display: flex; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+.players-side-btn { flex: 1; padding: 12px 16px; border: none; background: transparent; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-dim); border-bottom: 2px solid transparent; transition: all 0.2s; }
+.players-side-btn.active-yes { color: var(--yes); border-bottom-color: var(--yes); }
+.players-side-btn.active-no { color: var(--no); border-bottom-color: var(--no); }
+.player-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; transition: background 0.15s; }
+.player-row:hover { background: var(--surface); }
+.player-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+.player-avatar.yes-avatar { background: var(--yes-bg); color: var(--yes); border: 1px solid var(--yes-border); }
+.player-avatar.no-avatar { background: var(--no-bg); color: var(--no); border: 1px solid var(--no-border); }
+.player-info { flex: 1; }
+.player-name { font-size: 15px; font-weight: 600; color: var(--text); }
+.player-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; }
+.player-badge.you-yes { background: rgba(0,230,118,0.12); color: var(--yes); }
+.player-badge.you-no { background: rgba(217,119,6,0.12); color: var(--no); }
+.player-badge.rival { background: rgba(124,77,255,0.12); color: var(--accent); }
+.btn-mark-rival { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-mark-rival:hover { border-color: var(--accent); color: var(--accent); background: rgba(124,77,255,0.08); }
+.btn-mark-rival.active { border-color: var(--accent); color: var(--accent); background: rgba(124,77,255,0.1); }
+.no-players { text-align: center; padding: 32px; color: var(--text-muted); font-size: 14px; }
 
 /* Right column: action panel (sticky) */
 .detail-action {
@@ -2615,29 +2704,16 @@ footer .footer-text {
       <div class="detail-stats" id="dStats"></div>
       <div class="detail-criteria" id="dCriteria" style="display:none;"></div>
 
-      <!-- Tabs -->
-      <div class="detail-tabs">
-        <button class="detail-tab active" onclick="switchDetailTab('overview')">Overview</button>
-        <button class="detail-tab" onclick="switchDetailTab('players')">Players</button>
-      </div>
+      <!-- Overview (always visible) -->
+      <div id="dOverviewContent" style="color:var(--text-dim); font-size:14px; line-height:1.6; padding:8px 0;"></div>
 
-      <!-- Overview tab -->
-      <div class="detail-tab-content active" id="dtOverview">
-        <div id="dOverviewContent" style="color:var(--text-dim); font-size:14px; line-height:1.6; padding:8px 0;">
-          <!-- bet overview / activity will go here -->
+      <!-- Players section (always visible below overview) -->
+      <div class="enriched-players-section">
+        <div class="ep-header">
+          <h3 class="ep-title">👥 Players</h3>
+          <span class="ep-count" id="epCount"></span>
         </div>
-      </div>
-
-      <!-- Players tab -->
-      <div class="detail-tab-content" id="dtPlayers">
-        <div class="players-search">
-          <input type="text" id="playerSearchInput" placeholder="Search players..." autocomplete="off" oninput="filterPlayers()">
-        </div>
-        <div class="players-side-toggle">
-          <button class="players-side-btn active-yes" id="pTabYes" onclick="switchPlayerSide('yes')">👍 Yes <span id="pYesCount"></span></button>
-          <button class="players-side-btn" id="pTabNo" onclick="switchPlayerSide('no')">👎 No <span id="pNoCount"></span></button>
-        </div>
-        <div id="playersList"></div>
+        <div id="enrichedPlayersList"></div>
       </div>
     </div>
 
@@ -3409,9 +3485,6 @@ function updateStats() {
 
 // ═══ DETAIL VIEW (full page, hash routed) ═══
 let detailBetId = null;
-let detailVoters = { yes: [], no: [] };
-let activePlayerSide = 'yes';
-let activeDetailTab = 'overview';
 
 function openExpandedCard(betId) {
   // Navigate to detail view via hash
@@ -3426,8 +3499,6 @@ function showDetailView(betId) {
   const bet = allBets.find(b => b.id === betId);
   if (!bet) { navigateHome(); return; }
   detailBetId = betId;
-  activePlayerSide = 'yes';
-  activeDetailTab = 'overview';
 
   // Hide home, nemesis & leaderboard, show detail
   document.getElementById('homeView').style.display = 'none';
@@ -3551,12 +3622,8 @@ function showDetailView(betId) {
     `;
   }
 
-  // Reset tabs
-  document.querySelectorAll('.detail-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
-  document.querySelectorAll('.detail-tab-content').forEach((c, i) => c.classList.toggle('active', i === 0));
-
-  // Load voters
-  loadDetailVoters(betId);
+  // Load enriched players
+  renderEnrichedPlayers(betId);
 }
 
 function showHomeView() {
@@ -3603,83 +3670,93 @@ function handleHashChange() {
 }
 window.addEventListener('hashchange', handleHashChange);
 
-// Detail tab switching
-function switchDetailTab(tab) {
-  activeDetailTab = tab;
-  const tabs = document.querySelectorAll('.detail-tab');
-  const contents = document.querySelectorAll('.detail-tab-content');
-  tabs.forEach(t => t.classList.toggle('active', t.textContent.toLowerCase().includes(tab)));
-  document.getElementById('dtOverview').classList.toggle('active', tab === 'overview');
-  document.getElementById('dtPlayers').classList.toggle('active', tab === 'players');
-}
+// ═══ ENRICHED PLAYERS ═══
+async function renderEnrichedPlayers(betId) {
+  const listEl = document.getElementById('enrichedPlayersList');
+  const countEl = document.getElementById('epCount');
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="ep-empty">Loading players...</div>';
 
-// Players tab
-async function loadDetailVoters(betId) {
-  document.getElementById('playersList').innerHTML = '<div class="no-players">Loading players...</div>';
   try {
-    const resp = await fetch(`/api/bets/${betId}/voters`, { credentials: 'include' });
+    const resp = await fetch(`/api/bets/${betId}/players`, { credentials: 'include' });
     const data = await resp.json();
-    detailVoters = { yes: data.yesVoters || [], no: data.noVoters || [] };
-    document.getElementById('pYesCount').textContent = `(${detailVoters.yes.length})`;
-    document.getElementById('pNoCount').textContent = `(${detailVoters.no.length})`;
-    renderPlayersList();
-  } catch (e) {
-    document.getElementById('playersList').innerHTML = '<div class="no-players">Failed to load players</div>';
-  }
-}
+    const players = data.players || [];
 
-function switchPlayerSide(side) {
-  activePlayerSide = side;
-  document.getElementById('pTabYes').className = side === 'yes' ? 'players-side-btn active-yes' : 'players-side-btn';
-  document.getElementById('pTabNo').className = side === 'no' ? 'players-side-btn active-no' : 'players-side-btn';
-  renderPlayersList();
-}
+    if (players.length === 0) {
+      listEl.innerHTML = '<div class="ep-empty">No one has bet yet. Be the first!</div>';
+      countEl.textContent = '0 players';
+      return;
+    }
+    countEl.textContent = `${players.length} player${players.length !== 1 ? 's' : ''}`;
 
-function filterPlayers() {
-  renderPlayersList();
-}
+    listEl.innerHTML = players.map(p => {
+      const initial = (p.displayName || p.username || '?')[0].toUpperCase();
+      const sideClass = p.side === 'yes' ? 'side-yes' : 'side-no';
 
-function renderPlayersList() {
-  const listEl = document.getElementById('playersList');
-  const side = activePlayerSide;
-  let voters = side === 'yes' ? detailVoters.yes : detailVoters.no;
-  const query = (document.getElementById('playerSearchInput')?.value || '').toLowerCase().trim();
+      // Relationship badge
+      let relBadge = '';
+      if (p.isMe) relBadge = '<span class="ep-badge you">YOU</span>';
+      else if (p.relationship === 'nemesis') relBadge = '<span class="ep-badge nemesis">🔥 NEMESIS</span>';
+      else if (p.relationship === 'rival') relBadge = '<span class="ep-badge rival">⚔️ RIVAL</span>';
 
-  if (query) {
-    voters = voters.filter(v => (v.displayName || v.username || '').toLowerCase().includes(query));
-  }
+      // Side badge
+      const sideBadge = `<span class="ep-badge ${sideClass}">${p.side.toUpperCase()}</span>`;
 
-  if (voters.length === 0) {
-    const emoji = side === 'yes' ? '🟢' : '🔴';
-    listEl.innerHTML = query
-      ? `<div class="no-players">No players matching "${query}"</div>`
-      : `<div class="no-players">${emoji} No one has bet ${side.toUpperCase()} yet. Be the first!</div>`;
-    return;
-  }
+      // Stats line
+      let statsHtml = '';
+      if (!p.isMe && currentUser && p.sharedBets > 0) {
+        const heatClass = p.heatScore >= 70 ? 'hot' : p.heatScore >= 40 ? 'warm' : 'cold';
+        statsHtml = `
+          <div class="ep-stats">
+            <span>${p.sharedBets} shared</span>
+            <span>${p.opposingPicks} vs</span>
+            <div class="ep-heat">
+              <div class="ep-heat-bar"><div class="ep-heat-fill ${heatClass}" style="width:${p.heatScore}%"></div></div>
+              <span>${p.heatScore}%</span>
+            </div>
+          </div>
+        `;
+      }
 
-  listEl.innerHTML = voters.map(v => {
-    const isYou = currentUser && v.id === currentUser.id;
-    const initial = (v.displayName || v.username || '?')[0].toUpperCase();
-    const isRiv = isRival(v.id);
-    const isNem = isNemesis(v.id);
-    const rivalLabel = isNem ? '🔥 Nemesis' : isRiv ? '✓ Rival' : '🎯 Rival';
-    const rivalBtn = (!isYou && currentUser)
-      ? `<button class="btn-mark-rival${isRiv ? ' active' : ''}" onclick="event.stopPropagation();toggleRival(${v.id},'${(v.displayName || v.username).replace(/'/g, "\\'")}')" title="${isRiv ? 'Remove rival' : 'Mark as rival'}">${rivalLabel}</button>`
-      : '';
-    const nemBadge = isNem ? '<span class="player-badge rival" style="background:rgba(217,119,6,0.12);color:#D97706;">NEMESIS</span>' : isRiv ? '<span class="player-badge rival">RIVAL</span>' : '';
-    const clickAction = (!isYou && currentUser && (isNem || isRiv))
-      ? `window.location.hash='nemesis/${v.id}'`
-      : ((!isYou && currentUser) ? `openH2H(${v.id})` : '');
-    return `
-      <div class="player-row" ${clickAction ? `style="cursor:pointer" onclick="${clickAction}"` : ''}>
-        <div class="player-avatar ${side}-avatar">${initial}</div>
-        <div class="player-info">
-          <div class="player-name">${v.displayName || v.username} ${nemBadge}</div>
+      // Rival button (for non-you, logged-in)
+      let rivalBtn = '';
+      if (!p.isMe && currentUser) {
+        const isRiv = p.relationship === 'rival' || p.relationship === 'nemesis';
+        const btnClass = p.relationship === 'nemesis' ? 'is-nemesis' : p.relationship === 'rival' ? 'is-rival' : '';
+        const label = p.relationship === 'nemesis' ? '🔥 Nemesis' : p.relationship === 'rival' ? '✓ Rival' : '+ Rival';
+        rivalBtn = `<button class="ep-rival-btn ${btnClass}" onclick="event.stopPropagation();toggleRival(${p.id},'${(p.displayName || p.username).replace(/'/g, "\\'")}')">${label}</button>`;
+      }
+
+      // Click action
+      let clickAttr = '';
+      if (!p.isMe && currentUser) {
+        if (p.relationship === 'nemesis' || p.relationship === 'rival') {
+          clickAttr = `onclick="window.location.hash='nemesis/${p.id}'"`;
+        } else {
+          clickAttr = `onclick="openH2H(${p.id})"`;
+        }
+      }
+
+      return `
+        <div class="ep-card${p.isMe ? ' is-you' : ''}" ${clickAttr}>
+          <div class="ep-avatar ${sideClass}">${initial}</div>
+          <div class="ep-body">
+            <div class="ep-name-row">
+              <span class="ep-name">${p.displayName || p.username}</span>
+              ${relBadge}
+              ${sideBadge}
+            </div>
+            ${statsHtml}
+          </div>
+          <div class="ep-right">
+            ${rivalBtn}
+          </div>
         </div>
-        ${isYou ? `<span class="player-badge you-${side}">YOU</span>` : rivalBtn}
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div class="ep-empty">Failed to load players</div>';
+  }
 }
 
 // ═══ CHALLENGE SYSTEM ═══
@@ -3839,7 +3916,7 @@ async function toggleRival(rivalUserId, displayName) {
       showToast(`Removed ${displayName} from rivals`);
     }
     renderAvatarRow();
-    if (detailBetId) renderPlayersList();
+    if (detailBetId) renderEnrichedPlayers(detailBetId);
   } catch (e) {
     showToast('Failed to update rival');
   }
@@ -4830,8 +4907,8 @@ function showBetConfirmation(bet, side, rivalCreated) {
     </div>
   `;
 
-  // Load voters panel too
-  loadDetailVoters(bet.id);
+  // Refresh enriched players
+  renderEnrichedPlayers(bet.id);
 }
 
 // ── AI Arbitration (single bet) ──

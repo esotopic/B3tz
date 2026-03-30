@@ -1379,6 +1379,112 @@ async function handleRequest(req, res) {
   }
 
   // ══════════════════════════════════════
+  // ── API: Enriched Players for a Bet ──
+  // ══════════════════════════════════════
+  const playersMatch = pathname.match(/^\/api\/bets\/(\d+)\/players$/);
+  if (playersMatch && req.method === 'GET') {
+    const betId = parseInt(playersMatch[1]);
+    const user = dbPool ? await getUserFromSession(req) : null;
+    const userId = user ? (user.Id || user.id) : null;
+
+    if (dbPool) {
+      try {
+        // Get all voters on this bet
+        const votersResult = await dbPool.request()
+          .input('betId', sql.Int, betId)
+          .query(`
+            SELECT u.Id, u.Username, u.DisplayName, ub.Side, ub.PlacedDate
+            FROM B3tz_UserBets ub
+            JOIN B3tz_Users u ON u.Id = ub.UserId
+            WHERE ub.BetId = @betId
+            ORDER BY ub.PlacedDate ASC
+          `);
+
+        if (!userId) {
+          // Not logged in — return basic player data
+          const players = votersResult.recordset.map(r => ({
+            id: r.Id, username: r.Username,
+            displayName: r.DisplayName || r.Username,
+            side: r.Side, relationship: 'none',
+            sharedBets: 0, opposingPicks: 0, sameSidePicks: 0
+          }));
+          return sendJSON(res, 200, { players });
+        }
+
+        // Get rival/nemesis relationships for current user
+        const rivalResult = await dbPool.request()
+          .input('userId', sql.Int, userId)
+          .query(`
+            SELECT r.RivalUserId,
+                   CASE WHEN r2.Id IS NOT NULL THEN 'nemesis' ELSE 'rival' END AS relationship
+            FROM B3tz_Rivals r
+            LEFT JOIN B3tz_Rivals r2 ON r2.UserId = r.RivalUserId AND r2.RivalUserId = r.UserId
+            WHERE r.UserId = @userId
+          `);
+        const relMap = {};
+        rivalResult.recordset.forEach(r => { relMap[r.RivalUserId] = r.relationship; });
+
+        // Get shared bet stats for each voter vs current user
+        const otherIds = votersResult.recordset.map(r => r.Id).filter(id => id !== userId);
+        let statsMap = {};
+        if (otherIds.length > 0) {
+          const idList = otherIds.join(',');
+          const statsResult = await dbPool.request()
+            .input('userId', sql.Int, userId)
+            .query(`
+              SELECT
+                other.UserId AS OtherId,
+                COUNT(*) AS SharedBets,
+                SUM(CASE WHEN other.Side <> mine.Side THEN 1 ELSE 0 END) AS Opposing,
+                SUM(CASE WHEN other.Side = mine.Side THEN 1 ELSE 0 END) AS SameSide
+              FROM B3tz_UserBets mine
+              JOIN B3tz_UserBets other ON other.BetId = mine.BetId AND other.UserId <> mine.UserId
+              WHERE mine.UserId = @userId AND other.UserId IN (${idList})
+              GROUP BY other.UserId
+            `);
+          statsResult.recordset.forEach(r => {
+            statsMap[r.OtherId] = { shared: r.SharedBets, opposing: r.Opposing, sameSide: r.SameSide };
+          });
+        }
+
+        // Build enriched player list
+        const players = votersResult.recordset.map(r => {
+          const stats = statsMap[r.Id] || { shared: 0, opposing: 0, sameSide: 0 };
+          const isMe = r.Id === userId;
+          return {
+            id: r.Id,
+            username: r.Username,
+            displayName: r.DisplayName || r.Username,
+            side: r.Side,
+            isMe,
+            relationship: isMe ? 'you' : (relMap[r.Id] || 'none'),
+            sharedBets: stats.shared,
+            opposingPicks: stats.opposing,
+            sameSidePicks: stats.sameSide,
+            heatScore: stats.shared > 0 ? Math.round((stats.opposing / stats.shared) * 100) : 0
+          };
+        });
+
+        // Sort: you first, then nemesis, then rival, then by heat score desc
+        const tierOrder = { you: 0, nemesis: 1, rival: 2, none: 3 };
+        players.sort((a, b) => {
+          const ta = tierOrder[a.relationship] ?? 3;
+          const tb = tierOrder[b.relationship] ?? 3;
+          if (ta !== tb) return ta - tb;
+          return b.heatScore - a.heatScore;
+        });
+
+        return sendJSON(res, 200, { players });
+      } catch (e) {
+        console.error('Enriched players error:', e.message);
+        return sendJSON(res, 500, { error: 'Failed to load players' });
+      }
+    } else {
+      return sendJSON(res, 200, { players: [] });
+    }
+  }
+
+  // ══════════════════════════════════════
   // ── API: Create Challenge ──
   // ══════════════════════════════════════
 
