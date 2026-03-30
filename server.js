@@ -35,7 +35,8 @@ async function initDB() {
       port: DB_CONFIG.port,
       options: DB_CONFIG.options,
       pool: { max: 5, min: 0, idleTimeoutMillis: 30000 },
-      requestTimeout: 15000
+      connectionTimeout: 60000,
+      requestTimeout: 30000
     });
     console.log('Connected to Azure SQL');
     await ensureTables();
