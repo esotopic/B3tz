@@ -4102,7 +4102,7 @@ async function loadPrivateBets(rivalId) {
   const grid = document.getElementById('pbGrid');
   const banner = document.getElementById('pbPendingBanner');
 
-  if (!currentUser) {
+  if (!currentUser || !isNemesis(rivalId)) {
     section.style.display = 'none';
     return;
   }
